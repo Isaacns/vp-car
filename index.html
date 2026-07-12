@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>VP CAR · Gestão de Frota — Mobilidade Inteligente</title>
+<meta name="theme-color" content="#0B0B0D"/>
+<link rel="icon" type="image/png" sizes="32x32" href="vpcar-fav-32.png"/>
+<link rel="apple-touch-icon" href="vpcar-fav-180.png"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>window.VZ_ACCENT="#C7A96B";</script>
+<style>
+:root{
+  --carbon:#0B0B0D; --bg:#0B0B0D; --graphite:#1A1C1F; --card:#15171A; --card-2:#1C1F23; --raise:#212429;
+  --line:rgba(143,143,150,.16); --line-2:rgba(199,169,107,.28);
+  --txt:#F2F2F3; --sec:#B7B8BD; --mut:#8F8F96; --mut-2:#6E6F75;
+  --gold:#C7A96B; --gold-2:#DcC08a; --gold-d:#A8894E; --titan:#8F8F96; --ice:#F8F8F8;
+  --ok:#4FB985; --info:#7d9bd1; --warn:#D9A94C; --bad:#D96A5F; --block:#C98A3E; --violet:#9a8cd0;
+  --ink-btn:#0B0B0D;
+  --radius:14px; --radius-sm:10px; --shadow:0 24px 64px rgba(0,0,0,.55);
+  --sans:'Inter',system-ui,sans-serif;
+}
+[data-theme="light"]{
+  --carbon:#F8F8F8; --bg:#F1F1F0; --graphite:#ffffff; --card:#ffffff; --card-2:#f6f6f4; --raise:#ffffff;
+  --line:rgba(20,20,25,.12); --line-2:rgba(168,137,78,.4);
+  --txt:#14151A; --sec:#40424A; --mut:#75767C; --mut-2:#95969C; --ice:#14151A;
+  --shadow:0 16px 44px rgba(20,20,25,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);line-height:1.55;overflow-x:hidden}
+::-webkit-scrollbar{width:0;height:0}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+.hidden{display:none!important}
+.disp{font-weight:600;letter-spacing:.02em}
+
+@keyframes breathe{0%,100%{opacity:.92;filter:drop-shadow(0 0 0 rgba(199,169,107,0))}50%{opacity:1;filter:drop-shadow(0 0 12px rgba(199,169,107,.3))}}
+.breathe{animation:breathe 4.6s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.breathe{animation:none}}
+
+/* Botões — régua única */
+.b,.b-ghost,.b-sm,.b-wa,.b-danger,.b-block{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--sans);font-weight:600;font-size:.86rem;
+  height:38px;padding:0 16px;white-space:nowrap;transition:transform .12s,box-shadow .2s,filter .2s;line-height:1;vertical-align:middle;flex:none}
+.b{background:linear-gradient(135deg,var(--gold-2),var(--gold-d));color:var(--ink-btn)}
+.b:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(199,169,107,.34)}
+.b-ghost{background:transparent;color:var(--txt);border:1px solid var(--line-2)}
+.b-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.b-sm{height:32px;padding:0 12px;font-size:.79rem;background:var(--raise);color:var(--txt);border:1px solid var(--line)}
+.b-sm:hover{border-color:var(--gold);color:var(--gold)}
+.b-danger{height:32px;padding:0 12px;font-size:.79rem;background:linear-gradient(135deg,#e07d73,#c24b41);color:#fff}
+.b-block{height:32px;padding:0 12px;font-size:.79rem;background:linear-gradient(135deg,#d49a4e,#b06f24);color:#fff}
+.b-wa{height:32px;padding:0 12px;font-size:.79rem;background:linear-gradient(135deg,#25D366,#12A150);color:#fff}
+.b-wa:hover,.b-danger:hover,.b-block:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.b:disabled{opacity:.5;cursor:not-allowed}
+.ico-wa{width:16px;height:16px;fill:currentColor;flex:none}
+
+/* Login / Lock */
+#login,#lock,#portalLogin{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:20px}
+.auth-card{position:relative;z-index:2;width:100%;max-width:410px;background:linear-gradient(180deg,var(--card),var(--graphite));
+  border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:38px 32px;text-align:center}
+.auth-card .logo{width:210px;max-width:74%;height:auto;margin:0 auto 22px;display:block}
+.auth-card h1{font-size:1.1rem;font-weight:500;letter-spacing:.34em;color:var(--gold);text-transform:uppercase;margin-bottom:2px}
+.auth-card .sub{color:var(--mut);font-size:.8rem;margin-bottom:24px}
+.field{text-align:left;margin-bottom:13px}
+.field label{display:block;font-size:.68rem;color:var(--mut);margin-bottom:6px;text-transform:uppercase;letter-spacing:.12em}
+.field input{width:100%;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg);color:var(--txt);font-size:.95rem;font-family:inherit}
+.field input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(199,169,107,.16)}
+.err{color:var(--bad);font-size:.8rem;min-height:18px;margin-top:4px}
+.auth-alt{margin-top:18px;font-size:.78rem;color:var(--mut)}
+.auth-alt a{color:var(--gold);cursor:pointer;font-weight:600}
+.auth-hint{margin-top:12px;font-size:.7rem;color:var(--mut-2)}
+
+/* Shell */
+#app{position:relative;z-index:1;display:grid;grid-template-columns:244px 1fr;min-height:100vh}
+aside{background:linear-gradient(180deg,rgba(11,11,13,.72),rgba(11,11,13,.4));border-right:1px solid var(--line);
+  padding:22px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;backdrop-filter:blur(6px)}
+[data-theme="light"] aside{background:linear-gradient(180deg,#fff,#f5f5f3)}
+.brand{padding:2px 8px 20px}
+.brand img{width:150px;max-width:100%;height:auto;display:block}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:none;
+  color:var(--sec);font-family:inherit;font-size:.87rem;font-weight:500;padding:10px 12px;border-radius:10px;cursor:pointer;transition:.15s}
+.nav button .ic{font-size:1rem;width:20px;text-align:center;opacity:.9}
+.nav button:hover{background:var(--card);color:var(--txt)}
+.nav button.on{background:linear-gradient(135deg,rgba(199,169,107,.2),rgba(199,169,107,.05));color:var(--txt);box-shadow:inset 2px 0 0 var(--gold)}
+.nav .sep{font-size:.6rem;color:var(--mut-2);text-transform:uppercase;letter-spacing:.16em;padding:16px 12px 5px}
+main{padding:24px 30px 40px;max-width:1200px;width:100%}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+.topbar h2{font-size:1.6rem;font-weight:600}
+.topbar .subt{color:var(--mut);font-size:.83rem}
+.tb-actions{display:flex;gap:8px;align-items:center}
+
+/* avatar + user panel */
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:#0B0B0D;flex:none;overflow:hidden;background:var(--gold)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.userchip{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px;cursor:pointer;position:relative}
+.userchip:hover{border-color:var(--line-2)}
+.userchip .who{text-align:right;line-height:1.15}
+.userchip .who .nm{font-size:.82rem;font-weight:600}
+.userchip .who .rl{font-size:.66rem;color:var(--mut)}
+.udrop{position:absolute;top:52px;right:0;width:230px;background:var(--card);border:1px solid var(--line-2);border-radius:14px;box-shadow:var(--shadow);padding:8px;z-index:30}
+.udrop .uh{display:flex;align-items:center;gap:10px;padding:10px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.udrop .uh .nm{font-weight:600;font-size:.88rem}.udrop .uh .em{font-size:.7rem;color:var(--mut)}
+.udrop button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:none;color:var(--txt);font-family:inherit;font-size:.84rem;padding:10px 12px;border-radius:9px;cursor:pointer}
+.udrop button:hover{background:var(--raise)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(184px,1fr));gap:14px;margin-bottom:22px}
+.kpi{position:relative;background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;overflow:hidden;transition:transform .18s,box-shadow .18s}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc,var(--gold))}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.kpi .lab{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.07em}
+.kpi .val{font-weight:700;font-size:1.68rem;margin-top:7px;line-height:1;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:.73rem;color:var(--mut-2);margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+.panel{background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.panel h3{font-size:1.06rem;font-weight:600;margin-bottom:2px}
+.panel .ph{color:var(--mut);font-size:.76rem;margin-bottom:14px}
+.chart-wrap{position:relative;height:230px}
+
+/* Tabelas — sem sticky (corrige recortes) */
+.tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.tools input,.tools select{height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-family:inherit;font-size:.85rem}
+.tools input:focus,.tools select:focus{outline:none;border-color:var(--gold)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:720px}
+th{text-align:left;padding:12px 14px;font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);border-bottom:1px solid var(--line);white-space:nowrap;background:var(--card)}
+td{padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--card-2)}
+th.acoes,td.acoes{text-align:right}
+.row-actions{display:inline-flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap;align-items:center}
+.tag{display:inline-flex;align-items:center;padding:3px 11px;border-radius:999px;font-size:.7rem;font-weight:600;white-space:nowrap;line-height:1.4}
+.t-ok{background:rgba(79,185,133,.16);color:#6fd3a6}.t-info{background:rgba(125,155,209,.16);color:#a9c0e6}
+.t-warn{background:rgba(217,169,76,.18);color:#e6c06a}.t-bad{background:rgba(217,106,95,.16);color:#e69089}
+.t-blk{background:rgba(201,138,62,.2);color:#e2a860}.t-vio{background:rgba(154,140,208,.18);color:#bcb0e6}
+.t-gold{background:rgba(199,169,107,.18);color:var(--gold-2)}
+.t-mut{background:rgba(143,143,150,.16);color:var(--mut)}
+.empty{padding:40px;text-align:center;color:var(--mut)}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;z-index:50;background:rgba(4,4,6,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px}
+.modal{width:100%;max-width:600px;max-height:90vh;overflow-y:auto;background:linear-gradient(180deg,var(--card),var(--graphite));border:1px solid var(--line-2);border-radius:18px;box-shadow:var(--shadow);padding:24px 26px}
+.modal h3{font-size:1.2rem;font-weight:600;margin-bottom:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.form-grid .full{grid-column:1/-1}
+.modal label{display:block;font-size:.68rem;color:var(--mut);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+.modal input,.modal select,.modal textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--txt);font-family:inherit;font-size:.9rem}
+.modal input:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:var(--gold)}
+.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:22px}
+.photo-pick{display:flex;align-items:center;gap:14px}
+.photo-prev{width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--raise);border:1px solid var(--line-2)}
+
+/* galeria de fotos (vistorias) */
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.gal .cell{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3;background:var(--raise)}
+.gal .cell img{width:100%;height:100%;object-fit:cover;cursor:pointer}
+.gal .cell .ov{position:absolute;top:6px;right:6px;display:flex;gap:5px}
+.gal .cell .ov a,.gal .cell .ov button{width:26px;height:26px;border-radius:7px;border:none;background:rgba(11,11,13,.75);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;text-decoration:none}
+.lightbox{position:fixed;inset:0;z-index:70;background:rgba(4,4,6,.9);display:flex;align-items:center;justify-content:center;padding:24px}
+.lightbox img{max-width:92%;max-height:92%;border-radius:8px}
+
+.toast{position:fixed;bottom:22px;right:22px;z-index:80;background:var(--graphite);border:1px solid var(--line-2);border-left:4px solid var(--gold);border-radius:12px;padding:13px 18px;box-shadow:var(--shadow);font-size:.86rem;max-width:340px;animation:slidein .3s}
+@keyframes slidein{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+
+.sig{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--mut-2);font-size:.72rem;margin-top:42px;padding-top:18px;border-top:1px solid var(--line);text-align:center}
+.sig .vz{height:15px;opacity:.75;animation:vzb 5s ease-in-out infinite}
+@keyframes vzb{0%,100%{opacity:.5}50%{opacity:1}}
+.sig b{color:var(--gold)}
+
+.portal-hero{background:linear-gradient(135deg,rgba(199,169,107,.16),rgba(199,169,107,.03));border:1px solid var(--line-2);border-radius:var(--radius);padding:22px 24px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.portal-hero h3{font-size:1.4rem;font-weight:600}
+
+.menu-btn{display:none}
+@media(max-width:880px){
+  #app{grid-template-columns:1fr}
+  aside{position:fixed;z-index:45;left:-262px;width:250px;transition:left .25s}
+  aside.open{left:0}
+  .menu-btn{display:inline-flex!important}
+  .grid2{grid-template-columns:1fr}
+  main{padding:16px 14px 40px}
+  .topbar h2{font-size:1.36rem}
+  .userchip .who{display:none}
+  .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi .val{font-size:1.34rem}
+}
+@media(max-width:460px){.kpis{grid-template-columns:1fr}}
+</style>
+</head>
+<body data-theme="dark">
+
+<div id="login">
+  <form class="auth-card" onsubmit="doLogin(event)">
+    <img src="vpcar-branca.png" class="logo breathe" id="loginLogo" alt="VP CAR — Mobilidade Inteligente"/>
+    <div class="field"><label>Usuário</label><input id="lgUser" autocomplete="username" placeholder="victor"/></div>
+    <div class="field"><label>Senha</label><input id="lgPass" type="password" autocomplete="current-password" placeholder="••••••"/></div>
+    <div class="err" id="lgErr"></div>
+    <button class="b" style="width:100%;height:44px;margin-top:6px" type="submit">Entrar</button>
+    <div class="auth-alt">É locatário? <a onclick="showPortalLogin()">Acessar meu portal →</a></div>
+    <div class="auth-hint">Demo: <b>victor / vpcar</b> · master <b>inperson / inperson</b></div>
+  </form>
+</div>
+
+<div id="portalLogin" class="hidden">
+  <form class="auth-card" onsubmit="doPortalLogin(event)">
+    <img src="vpcar-branca.png" class="logo breathe" alt="VP CAR"/>
+    <h1>Portal do Locatário</h1><div class="sub">Acesse com o link que a VP CAR enviou</div>
+    <div class="field"><label>Usuário</label><input id="plUser" placeholder="anderson"/></div>
+    <div class="field"><label>Senha</label><input id="plPass" type="password" placeholder="••••"/></div>
+    <div class="err" id="plErr"></div>
+    <button class="b" style="width:100%;height:44px" type="submit">Entrar</button>
+    <div class="auth-alt"><a onclick="showAdminLogin()">← Voltar</a></div>
+    <div class="auth-hint">Demo: <b>anderson / 1234</b></div>
+  </form>
+</div>
+
+<div id="lock" class="hidden">
+  <form class="auth-card" onsubmit="doUnlock(event)">
+    <img src="vpcar-branca.png" class="logo breathe" alt="VP CAR"/>
+    <h1>Sistema bloqueado</h1><div class="sub" id="lockWho">—</div>
+    <div class="field"><label>Senha para desbloquear</label><input id="lockPass" type="password" placeholder="••••••"/></div>
+    <div class="err" id="lockErr"></div>
+    <button class="b" style="width:100%;height:44px" type="submit">Desbloquear</button>
+    <div class="auth-alt"><a onclick="logout()">Sair da conta</a></div>
+  </form>
+</div>
+
+<div id="app" class="hidden">
+  <aside id="side">
+    <div class="brand"><img src="vpcar-branca.png" id="sideLogo" alt="VP CAR"/></div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <main>
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="b-sm menu-btn" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+        <div><h2 id="viewTitle">Visão Geral</h2><div class="subt" id="viewSub">Painel consolidado da frota</div></div>
+      </div>
+      <div class="tb-actions">
+        <button class="b-sm" onclick="toggleTheme()" id="themeBtn" style="width:36px;padding:0">☾</button>
+        <div class="userchip" id="userchip" onclick="toggleUserDrop(event)">
+          <div class="who"><div class="nm" id="ucName">—</div><div class="rl" id="ucRole">—</div></div>
+          <div class="avatar" id="ucAvatar">VP</div>
+          <div class="udrop hidden" id="udrop" onclick="event.stopPropagation()">
+            <div class="uh"><div class="avatar" id="udAvatar" style="width:40px;height:40px">VP</div><div><div class="nm" id="udName">—</div><div class="em" id="udRole">—</div></div></div>
+            <button onclick="CRUD.meuPerfil()">🖼️ Trocar foto do perfil</button>
+            <button onclick="CRUD.trocarSenha()">🔑 Trocar senha</button>
+            <button onclick="lockSystem()">🔒 Bloquear sistema</button>
+            <button onclick="logout()">⎋ Sair</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="view"></div>
+    <div class="sig">
+      <div>VP CAR · Mobilidade Inteligente · Sistema <b>by VIZIO</b> — um produto INPERSON</div>
+      <img class="vz" src="vizio-wordmark-light.png" alt="VIZIO" onerror="this.style.display='none'"/>
+    </div>
+  </main>
+</div>
+
+<script src="dados.js"></script>
+<script>
+/* ===================== Núcleo ===================== */
+let WORK=JSON.parse(JSON.stringify(DADOS));
+let SESSION=null, PORTAL=null, CURRENT="home", charts={};
+
+const fmtBRL=n=>(Number(n)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const fmtNum=n=>(Number(n)||0).toLocaleString("pt-BR");
+const fmtDate=iso=>{if(!iso)return"—";const p=String(iso).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:iso;};
+const daysTo=iso=>{if(!iso)return null;return Math.ceil((new Date(iso)-new Date("2026-07-12"))/864e5);};
+const byId=(arr,id)=>arr.find(x=>x.id===id)||{};
+const vNome=id=>byId(WORK.veiculos,id).modelo?`${byId(WORK.veiculos,id).modelo} · ${byId(WORK.veiculos,id).placa}`:"—";
+const lNome=id=>byId(WORK.locatarios,id).nome||"—";
+const initials=n=>(n||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
+function avatarInner(o){return o&&o.foto?`<img src="${o.foto}" alt=""/>`:(o?initials(o.nome):"VP");}
+const WA_SVG='<svg class="ico-wa" viewBox="0 0 24 24"><path d="M19.05 4.91A9.82 9.82 0 0 0 12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.004c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01zM12.04 20.15a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.11.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.24 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.17-.25.25-.42.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.42h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29z"/></svg>';
+function waLink(tel,msg){const t=String(tel||"").replace(/\D/g,"");const p=t.startsWith("55")?t:("55"+t);return`https://wa.me/${p}?text=${encodeURIComponent(msg)}`;}
+function waBtn(tel,msg,label){return`<a class="b-wa" target="_blank" rel="noopener" href="${waLink(tel,msg)}" title="WhatsApp">${WA_SVG}${label?`<span>${label}</span>`:""}</a>`;}
+function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3400);}
+function logAcesso(user,nome,acao,origem){WORK._acessos=WORK._acessos||[];const d=new Date();WORK._acessos.unshift({data:"2026-07-12",hora:d.toTimeString().slice(0,5),user,nome,acao,origem:origem||"Web"});}
+function portalToken(loc){return loc.token||("k"+btoa(unescape(encodeURIComponent(loc.id))).replace(/=/g,""));}
+function portalUrl(loc){return location.origin+location.pathname+"?portal="+portalToken(loc);}
+window.VP={get WORK(){return WORK;},fmtBRL,fmtDate,fmtNum,byId,vNome,lNome,waLink,waBtn,toast,WA_SVG,initials,avatarInner,portalUrl,portalToken,refresh:()=>render(CURRENT),get session(){return SESSION;},startApp:()=>startApp()};
+
+/* ===================== Auth ===================== */
+function doLogin(e){e.preventDefault();
+  const u=document.getElementById("lgUser").value.trim().toLowerCase(),p=document.getElementById("lgPass").value;
+  const f=(WORK._users||[]).find(x=>x.user.toLowerCase()===u&&x.pass===p);
+  if(!f){document.getElementById("lgErr").textContent="Usuário ou senha inválidos.";return;}
+  SESSION=f;logAcesso(f.user,f.nome,"login");try{sessionStorage.setItem("vpcar_s",JSON.stringify({u:f.user}));}catch(e){}
+  startApp();}
+function doPortalLogin(e){e.preventDefault();
+  const u=document.getElementById("plUser").value.trim().toLowerCase(),p=document.getElementById("plPass").value;
+  const f=(WORK._locUsers||[]).find(x=>x.user.toLowerCase()===u&&x.pass===p);
+  if(!f){document.getElementById("plErr").textContent="Acesso inválido.";return;}
+  PORTAL=byId(WORK.locatarios,f.locatarioId);logAcesso(u,PORTAL.nome,"login","Portal");
+  document.getElementById("portalLogin").classList.add("hidden");renderPortalStandalone();}
+function showPortalLogin(){document.getElementById("login").classList.add("hidden");document.getElementById("portalLogin").classList.remove("hidden");}
+function showAdminLogin(){document.getElementById("portalLogin").classList.add("hidden");document.getElementById("login").classList.remove("hidden");}
+function logout(){if(SESSION)logAcesso(SESSION.user,SESSION.nome,"logout");SESSION=null;PORTAL=null;try{sessionStorage.removeItem("vpcar_s");}catch(e){}
+  history.replaceState(null,"",location.pathname);
+  ["app","lock","portalLogin"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  document.getElementById("login").classList.remove("hidden");}
+function lockSystem(){if(SESSION)logAcesso(SESSION.user,SESSION.nome,"bloqueio","Manual");
+  document.getElementById("app").classList.add("hidden");document.getElementById("udrop").classList.add("hidden");
+  document.getElementById("lockWho").textContent=SESSION?SESSION.nome:"—";document.getElementById("lock").classList.remove("hidden");}
+function doUnlock(e){e.preventDefault();const p=document.getElementById("lockPass").value;
+  if(SESSION&&p===SESSION.pass){document.getElementById("lock").classList.add("hidden");document.getElementById("lockPass").value="";document.getElementById("app").classList.remove("hidden");}
+  else document.getElementById("lockErr").textContent="Senha incorreta.";}
+function startApp(){["login","lock","portalLogin"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  document.getElementById("app").classList.remove("hidden");refreshUserChip();buildNav();render("home");}
+function refreshUserChip(){if(!SESSION)return;
+  document.getElementById("ucName").textContent=SESSION.nome;document.getElementById("ucRole").textContent=SESSION.roleLabel;
+  document.getElementById("udName").textContent=SESSION.nome;document.getElementById("udRole").textContent="@"+SESSION.user;
+  document.getElementById("ucAvatar").innerHTML=avatarInner(SESSION);
+  document.getElementById("udAvatar").innerHTML=avatarInner(SESSION);
+  if(!SESSION.foto){document.getElementById("ucAvatar").style.background=SESSION.cor||"var(--gold)";document.getElementById("udAvatar").style.background=SESSION.cor||"var(--gold)";}}
+window.VP.refreshUserChip=refreshUserChip;
+function toggleUserDrop(e){e.stopPropagation();document.getElementById("udrop").classList.toggle("hidden");}
+document.addEventListener("click",()=>document.getElementById("udrop")?.classList.add("hidden"));
+
+/* ===================== Navegação ===================== */
+const MODULES=[
+  {id:"home",ic:"◧",label:"Visão Geral",sub:"Painel consolidado da frota",grp:null,acc:"var(--gold)"},
+  {id:"frota",ic:"🚗",label:"Frota",sub:"Veículos, IPVA, seguro e status",grp:"Operação",acc:"var(--info)"},
+  {id:"locatarios",ic:"👤",label:"Locatários",sub:"Motoristas de aplicativo",grp:"Operação",acc:"var(--ok)"},
+  {id:"cobranca",ic:"⚡",label:"Cobrança & Bloqueio",sub:"Vencimentos e bloqueio via satélite",grp:"Operação",acc:"var(--block)"},
+  {id:"recorrencia",ic:"🔁",label:"Recorrência PIX",sub:"Cobrança recorrente automática",grp:"Operação",acc:"var(--ok)"},
+  {id:"reservas",ic:"📅",label:"Reservas & Fila",sub:"Interessados e reservas de veículos",grp:"Operação",acc:"var(--info)"},
+  {id:"multas",ic:"🚦",label:"Multas",sub:"Infrações com o veículo alugado",grp:"Operação",acc:"var(--violet)"},
+  {id:"manutencao",ic:"🔧",label:"Manutenção & Despesas",sub:"IPVA, revisões, óleo, pneus, seguro",grp:"Operação",acc:"var(--warn)"},
+  {id:"alavancagem",ic:"📈",label:"Alavancagem & Recuperação",sub:"Ociosos, inativos e upgrades",grp:"Receita",acc:"var(--gold)"},
+  {id:"financeiro",ic:"📊",label:"Saúde Financeira",sub:"Rentabilidade por veículo",grp:"Receita",acc:"var(--ok)"},
+  {id:"score",ic:"⭐",label:"Score do Motorista",sub:"Confiabilidade por locatário",grp:"Receita",acc:"var(--gold)"},
+  {id:"contratos",ic:"📄",label:"Contratos",sub:"Gerador de contrato + caução",grp:"Documentos",acc:"var(--info)"},
+  {id:"vistorias",ic:"📷",label:"Vistorias",sub:"Checklist e fotos do veículo",grp:"Documentos",acc:"var(--gold)"},
+  {id:"documentos",ic:"🗂️",label:"Central de Documentos",sub:"CRLV, seguro, IPVA e CNH",grp:"Documentos",acc:"var(--warn)"},
+  {id:"portal",ic:"🪪",label:"Portal do Locatário",sub:"Link exclusivo do motorista",grp:"Gestão",acc:"var(--info)"},
+  {id:"usuarios",ic:"🔐",label:"Usuários & Acessos",sub:"Controle e registro de acesso",grp:"Gestão",acc:"var(--violet)"}
+];
+function buildNav(){const nav=document.getElementById("nav");nav.innerHTML="";let grp=null;
+  MODULES.forEach(m=>{if(m.id==="usuarios"&&!(SESSION.perfil==="master"||SESSION.perfil==="admin"))return;
+    if(m.grp&&m.grp!==grp){grp=m.grp;const s=document.createElement("div");s.className="sep";s.textContent=grp;nav.appendChild(s);}
+    const b=document.createElement("button");b.dataset.id=m.id;b.innerHTML=`<span class="ic">${m.ic}</span><span>${m.label}</span>`;b.onclick=()=>render(m.id);nav.appendChild(b);});}
+function render(id){CURRENT=id;const m=MODULES.find(x=>x.id===id)||MODULES[0];
+  document.getElementById("viewTitle").textContent=m.label;document.getElementById("viewSub").textContent=m.sub;
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.id===id));
+  document.getElementById("side").classList.remove("open");
+  Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};
+  const v=document.getElementById("view");v.style.setProperty("--acc",m.acc);
+  ({home:rHome,frota:rFrota,locatarios:rLoc,cobranca:rCob,recorrencia:rRecorrencia,reservas:rReservas,multas:rMultas,manutencao:rManut,alavancagem:rAlav,
+    financeiro:rFin,score:rScore,contratos:rContr,vistorias:rVist,documentos:rDocumentos,portal:rPortalPreview,usuarios:rUsuarios}[id]||rHome)(v);
+  window.scrollTo({top:0,behavior:"smooth"});}
+
+/* ===================== UI helpers ===================== */
+function kpi(lab,val,sub,acc,cls){return`<div class="kpi ${cls||''}" style="--acc:${acc||'var(--gold)'}"><div class="lab">${lab}</div><div class="val">${val}</div><div class="sub">${sub||''}</div></div>`;}
+function mensalizar(l){if(l.plano==="Mensal")return l.valorAluguel;if(l.plano==="Semanal")return l.valorAluguel*4.345;if(l.plano==="Diário")return l.valorAluguel*26;return l.valorAluguel;}
+function svTag(s){return`<span class="tag ${{"Disponível":"t-ok","Alugado":"t-info","Manutenção":"t-warn","Bloqueado":"t-blk"}[s]||'t-mut'}">${s}</span>`;}
+function spTag(s){return`<span class="tag ${{"Pago":"t-ok","Pendente":"t-warn","Atrasado":"t-bad"}[s]||'t-mut'}">${s}</span>`;}
+function emptyRow(n){return`<tr><td colspan="${n}" class="empty">Nenhum registro encontrado.</td></tr>`;}
+function chartOpts(money){const mut=getComputedStyle(document.body).getPropertyValue("--mut"),grid=getComputedStyle(document.body).getPropertyValue("--line");
+  return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false},ticks:{color:mut,font:{size:11}}},y:{grid:{color:grid},ticks:{color:mut,font:{size:11},callback:v=>money?("R$ "+(v/1000)+"k"):v}}}};}
+function matchQ(mod,txt){const q=(document.getElementById("q_"+mod)?.value||"").toLowerCase();return!q||txt.toLowerCase().includes(q);}
+function actBtns(mod,id){return`<td class="acoes"><div class="row-actions">
+  <button class="b-sm" onclick="CRUD.open('${mod}','${id}')">Editar</button>
+  <button class="b-danger" onclick="CRUD.remove('${mod}','${id}')">Excluir</button></div></td>`;}
+function tableView(v,cfg){const{mod,titleAdd,cols,rowsHtml,filters,canAdd=true}=cfg;
+  const canEdit=SESSION&&SESSION.perfil!=="operacao"||cfg.opEdit;
+  v.insertAdjacentHTML("beforeend",`<div class="tools">
+    <input id="q_${mod}" placeholder="🔎 Buscar..." oninput="VP.refresh()" style="min-width:200px"/>${filters||""}
+    <div style="flex:1"></div>
+    ${canEdit&&canAdd?`<button class="b" onclick="CRUD.open('${mod}')">+ ${titleAdd}</button>`:""}
+    <button class="b-ghost" onclick="CRUD.report('${mod}')">🖨️ PDF</button></div>
+    <div class="tbl-wrap"><table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}${canEdit?'<th class="acoes">Ações</th>':""}</tr></thead>
+    <tbody id="tb_${mod}">${rowsHtml(canEdit)}</tbody></table></div>`);}
+
+/* ===================== HOME ===================== */
+function agg(){const V=WORK.veiculos,C=WORK.cobrancas,L=WORK.locatarios,M=WORK.multas||[];
+  const alugados=V.filter(v=>v.statusVeic==="Alugado").length,disp=V.filter(v=>v.statusVeic==="Disponível").length,
+    manut=V.filter(v=>v.statusVeic==="Manutenção").length,bloq=V.filter(v=>v.statusVeic==="Bloqueado").length;
+  return{frota:V.length,alugados,disp,manut,bloq,ocup:V.length?Math.round(alugados/V.length*100):0,
+    receitaPrev:L.filter(l=>l.statusLoc!=="Inativo").reduce((s,l)=>s+mensalizar(l),0),
+    recebido:C.filter(c=>c.statusPag==="Pago").reduce((s,c)=>s+c.valor,0),
+    aReceber:C.filter(c=>c.statusPag!=="Pago").reduce((s,c)=>s+c.valor,0),
+    atrasado:C.filter(c=>c.statusPag==="Atrasado").reduce((s,c)=>s+c.valor,0),
+    inad:L.filter(l=>l.statusLoc==="Inadimplente").length,
+    multasAbertas:M.filter(m=>m.status==="Pendente").reduce((s,m)=>s+m.valor,0)};}
+function rHome(v){const a=agg();
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Frota total",a.frota,`${a.alugados} alugados · ${a.disp} livres`,"var(--gold)")}
+    ${kpi("Ocupação",a.ocup+"%","veículos gerando receita","var(--info)")}
+    ${kpi("Receita prevista/mês",fmtBRL(a.receitaPrev),"contratos ativos","var(--ok)")}
+    ${kpi("A receber",fmtBRL(a.aReceber),WORK.cobrancas.filter(c=>c.statusPag!=='Pago').length+" em aberto","var(--warn)")}
+    ${kpi("Em atraso",fmtBRL(a.atrasado),a.inad+" inadimplente(s)","var(--bad)")}
+    ${kpi("Bloqueados",a.bloq,a.bloq?"ação necessária":"tudo em ordem","var(--block)")}
+    ${kpi("Multas pendentes",fmtBRL(a.multasAbertas),(WORK.multas||[]).length+" no total","var(--violet)")}
+    ${kpi("Caução retida",fmtBRL((WORK.contratos||[]).reduce((s,k)=>s+(k.caucao||0),0)),"garantia dos contratos","var(--gold)")}
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Receita mensal</h3><div class="ph">Reconhecida — últimos 6 meses</div><div class="chart-wrap"><canvas id="chR"></canvas></div></div>
+    <div class="panel"><h3>Situação da frota</h3><div class="ph">Distribuição por status</div><div class="chart-wrap"><canvas id="chF"></canvas></div></div>
+  </div>${alertas()}`;
+  const mut=getComputedStyle(document.body).getPropertyValue("--mut");
+  charts.r=new Chart(chR,{type:"line",data:{labels:WORK.receitaMensal.map(r=>r.mes),datasets:[{data:WORK.receitaMensal.map(r=>r.valor),borderColor:"#C7A96B",backgroundColor:"rgba(199,169,107,.13)",fill:true,tension:.4,pointRadius:3,pointBackgroundColor:"#DcC08a",borderWidth:2}]},options:chartOpts(true)});
+  charts.f=new Chart(chF,{type:"doughnut",data:{labels:["Alugado","Disponível","Manutenção","Bloqueado"],datasets:[{data:[a.alugados,a.disp,a.manut,a.bloq],backgroundColor:["#7d9bd1","#4FB985","#D9A94C","#C98A3E"],borderWidth:0}]},options:{plugins:{legend:{position:"bottom",labels:{color:mut,padding:14,font:{size:11}}}},cutout:"64%",responsive:true,maintainAspectRatio:false}});}
+function alertas(){const venc=WORK.veiculos.map(v=>({v,d:daysTo(v.ipvaVenc)})).filter(x=>x.d!==null&&x.d<=30).sort((a,b)=>a.d-b.d);
+  const atr=WORK.cobrancas.filter(c=>c.statusPag==="Atrasado"),pend=WORK.cobrancas.filter(c=>c.statusPag==="Pendente"&&daysTo(c.vencimento)<=3);
+  const mult=(WORK.multas||[]).filter(m=>m.status==="Pendente");let rows="";
+  atr.forEach(c=>rows+=aRow("🔴","Aluguel em atraso",`${lNome(c.locatarioId)} · ${vNome(c.veiculoId)} · ${fmtBRL(c.valor)}`,"cobranca"));
+  pend.forEach(c=>rows+=aRow("🟠","Vence em breve",`${lNome(c.locatarioId)} · ${fmtDate(c.vencimento)} · ${fmtBRL(c.valor)}`,"cobranca"));
+  mult.forEach(m=>rows+=aRow("🚦","Multa pendente",`${lNome(m.locatarioId)} · ${m.infracao} · ${fmtBRL(m.valor)}`,"multas"));
+  venc.forEach(x=>rows+=aRow(x.d<0?"🔴":"🟡","IPVA a vencer",`${vNome(x.v.id)} · ${x.d<0?"vencido":x.d+"d"} (${fmtDate(x.v.ipvaVenc)})`,"frota"));
+  if(!rows)rows=`<div class="empty">Nenhum alerta. Frota sob controle. ✅</div>`;
+  return`<div class="panel"><h3>Alertas & pendências</h3><div class="ph">Prioridades operacionais e financeiras</div>${rows}</div>`;}
+function aRow(ic,t,d,go){return`<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)">
+  <span style="font-size:1.1rem">${ic}</span><div style="flex:1"><div style="font-weight:600;font-size:.9rem">${t}</div><div style="color:var(--mut);font-size:.8rem">${d}</div></div>
+  <button class="b-sm" onclick="render('${go}')">Ver</button></div>`;}
+
+/* ===================== FROTA ===================== */
+function rFrota(v){v.innerHTML="";tableView(v,{mod:"veiculos",titleAdd:"Veículo",
+  filters:`<select id="fSt" onchange="VP.refresh()"><option value="">Todos status</option><option>Disponível</option><option>Alugado</option><option>Manutenção</option><option>Bloqueado</option></select>`,
+  cols:["Placa","Modelo","Ano","Diária","Status","IPVA","Seguro/mês","Locatário"],
+  rowsHtml:e=>{const fs=document.getElementById("fSt")?.value||"";
+    const rows=WORK.veiculos.filter(x=>(!fs||x.statusVeic===fs)&&matchQ("veiculos",`${x.placa} ${x.modelo} ${x.cor}`));
+    if(!rows.length)return emptyRow(9);
+    return rows.map(x=>{const d=daysTo(x.ipvaVenc),w=d!==null&&d<=15;
+      return`<tr><td><b>${x.placa}</b></td><td>${x.modelo}<div style="color:var(--mut);font-size:.74rem">${x.cor} · ${fmtNum(x.km)} km</div></td>
+      <td>${x.ano}</td><td>${fmtBRL(x.valorDiaria)}</td><td>${svTag(x.statusVeic)}</td>
+      <td style="color:${w?'var(--warn)':'inherit'}">${fmtDate(x.ipvaVenc)}${w?` · ${d}d`:''}</td><td>${fmtBRL(x.seguroMensal)}</td>
+      <td>${x.locatarioId?lNome(x.locatarioId):'<span class="tag t-mut">livre</span>'}</td>${e?actBtns("veiculos",x.id):""}</tr>`;}).join("");}});}
+
+/* ===================== LOCATÁRIOS ===================== */
+function rLoc(v){v.innerHTML="";tableView(v,{mod:"locatarios",titleAdd:"Locatário",
+  cols:["Locatário","App","CNH/EAR","Veículo","Plano","Valor","Status","Score","Contato"],
+  rowsHtml:e=>{const rows=WORK.locatarios.filter(x=>matchQ("locatarios",`${x.nome} ${x.cpf} ${x.app}`));
+    if(!rows.length)return emptyRow(9);
+    return rows.map(x=>{const inad=x.statusLoc==="Inadimplente";
+      const ear=x.ear?'<span class="tag t-ok">EAR ✓</span>':'<span class="tag t-bad">sem EAR</span>';
+      const msg=`Olá ${x.nome.split(" ")[0]}, aqui é da VP CAR. `+(inad?`Consta pendência no aluguel do ${vNome(x.veiculoId)}. Pode confirmar o pagamento para evitarmos o bloqueio? 🚗`:`Tudo certo com sua locação? Estamos à disposição.`);
+      return`<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:32px;height:32px;font-size:.72rem">${avatarInner(x)}</div><div><b>${x.nome}</b><div style="color:var(--mut);font-size:.72rem">${x.cpf}</div></div></div></td>
+      <td><span class="tag t-info">${x.app}</span></td><td>${ear}</td><td>${vNome(x.veiculoId)}</td><td>${x.plano}</td>
+      <td>${fmtBRL(x.valorAluguel)}</td><td>${inad?'<span class="tag t-bad">Inadimplente</span>':'<span class="tag t-ok">Ativo</span>'}</td>
+      <td>${scoreBadge(x)}</td><td>${waBtn(x.telefone,msg)}</td>${e?actBtns("locatarios",x.id):""}</tr>`;}).join("");}});}
+
+/* ===================== COBRANÇA & BLOQUEIO ===================== */
+function rCob(v){const a=agg();
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Recebido no ciclo",fmtBRL(a.recebido),"confirmados","var(--ok)")}
+    ${kpi("A receber",fmtBRL(a.aReceber),"em aberto","var(--warn)")}
+    ${kpi("Em atraso",fmtBRL(a.atrasado),a.inad+" inadimplente(s)","var(--bad)")}
+    ${kpi("Bloqueios ativos",a.bloq,"via satélite","var(--block)")}</di
