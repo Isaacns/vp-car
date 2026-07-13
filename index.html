@@ -82,6 +82,17 @@ a{color:inherit;text-decoration:none}
 .pw-wrap>input{width:100%;padding-right:44px!important}
 .pw-eye{position:absolute;top:0;right:0;height:100%;width:42px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--mut);cursor:pointer}
 .pw-eye:hover{color:var(--txt)}
+/* Telas de detalhe (linha clicável) */
+tr.clickable{cursor:pointer}
+tr.clickable:hover{background:var(--card-2)}
+.det{margin:2px 0 14px}
+.det-row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.det-row:last-child{border-bottom:none}
+.det-k{color:var(--mut)}
+.det-v{font-weight:600;text-align:right}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin:6px 0 14px}
+.thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--line-2)}
+.modal.wide{max-width:940px}
 
 /* Shell */
 #app{position:relative;z-index:1;display:grid;grid-template-columns:244px 1fr;min-height:100vh}
@@ -319,7 +330,21 @@ function toast(msg){const t=document.createElement("div");t.className="toast";t.
 function logAcesso(user,nome,acao,origem){WORK._acessos=WORK._acessos||[];const d=new Date();WORK._acessos.unshift({data:"2026-07-12",hora:d.toTimeString().slice(0,5),user,nome,acao,origem:origem||"Web"});}
 function portalSlug(loc){const base=(loc.nome||"").toLowerCase().normalize("NFD").replace(/[^a-z]/g,"").slice(0,5);return base+(loc.id||"").replace(/\D/g,"");}
 function portalUrl(loc){return location.origin+location.pathname+"?p="+portalSlug(loc);}
-function pushNotif(tipo,titulo,desc){WORK._notificacoes=WORK._notificacoes||[];WORK._notificacoes.unshift({id:"N"+Date.now().toString(36),tipo,titulo,desc,data:"2026-07-12",hora:new Date().toTimeString().slice(0,5),lida:false});}
+function pushNotif(tipo,titulo,desc,link){WORK._notificacoes=WORK._notificacoes||[];WORK._notificacoes.unshift({id:"N"+Date.now().toString(36),tipo,titulo,desc,link:link||null,data:"2026-07-12",hora:new Date().toTimeString().slice(0,5),lida:false});}
+/* navegação: abre o módulo e, quando possível, a tela/registro relacionado */
+function goto(mod,id){
+  const map={multas:"multas",contratos:"contratos",cobrancas:"cobranca",cobranca:"cobranca",report:"portal",ocorrencias:"portal",portal:"portal",locatarios:"locatarios",veiculos:"documentos",vistorias:"vistorias",reservas:"reservas"};
+  const view=map[mod]||mod;render(view);
+  setTimeout(()=>{try{
+    if(mod==="multas"&&id&&window.CRUD)CRUD.verMulta(id);
+    else if(mod==="vistorias"&&id&&window.CRUD)CRUD.verVistoria(id);
+    else if((mod==="report"||mod==="ocorrencias"||mod==="portal")&&id&&window.CRUD)CRUD.verComoLocatario(id);
+  }catch(e){}},70);}
+/* persistência de mídia (fotos) via localStorage — sobrevive ao reload */
+const MEDIA_KEY="vpcar_media";
+function loadMedia(){try{return JSON.parse(localStorage.getItem(MEDIA_KEY))||{users:{},locatarios:{}};}catch(e){return{users:{},locatarios:{}};}}
+function saveMediaFor(kind,key,dataUrl){try{const m=loadMedia();m[kind]=m[kind]||{};m[kind][key]=dataUrl;localStorage.setItem(MEDIA_KEY,JSON.stringify(m));}catch(e){}}
+function rehydrateMedia(){const m=loadMedia();(WORK._users||[]).forEach(u=>{if(m.users&&m.users[u.user])u.foto=m.users[u.user];});(WORK.locatarios||[]).forEach(l=>{if(m.locatarios&&m.locatarios[l.id])l.foto=m.locatarios[l.id];});}
 /* ===== Padrões de campos de acesso: mostrar/ocultar senha + máscaras ===== */
 const EYE_ON='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 const EYE_OFF='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 6.1A9.6 9.6 0 0 1 12 6c6.4 0 10 6 10 6a15.8 15.8 0 0 1-3.2 3.8M6.2 6.2A15.8 15.8 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
@@ -335,7 +360,7 @@ function brlToNumber(v){var d=(''+v).replace(/\D/g,'');return d?parseInt(d,10)/1
 function numToBRLInput(n){return maskBRL(String(Math.round((parseFloat(n)||0)*100)));}
 document.addEventListener('input',function(e){var t=e.target;if(!t||!t.dataset||!t.dataset.mask)return;if(t.dataset.mask==='phone')t.value=maskPhoneBR(t.value);else if(t.dataset.mask==='brl')t.value=maskBRL(t.value);});
 window.VP={get WORK(){return WORK;},fmtBRL,fmtDate,fmtNum,byId,vNome,lNome,waLink,waBtn,toast,WA_SVG,initials,avatarInner,portalUrl,portalSlug,notif:pushNotif,
-  installPwToggles,maskPhoneBR,maskBRL,brlToNumber,numToBRLInput,
+  installPwToggles,maskPhoneBR,maskBRL,brlToNumber,numToBRLInput,goto,saveMediaFor,
   refresh:()=>{if(PORTAL){portalContent(document.getElementById("view"),PORTAL.id);}else render(CURRENT);},get session(){return SESSION;},startApp:()=>startApp()};
 
 /* ===================== Auth ===================== */
@@ -474,13 +499,13 @@ function alertas(){const venc=WORK.veiculos.map(v=>({v,d:daysTo(v.ipvaVenc)})).f
   const mult=(WORK.multas||[]).filter(m=>m.status==="Pendente");let rows="";
   atr.forEach(c=>rows+=aRow("🔴","Aluguel em atraso",`${lNome(c.locatarioId)} · ${vNome(c.veiculoId)} · ${fmtBRL(c.valor)}`,"cobranca"));
   pend.forEach(c=>rows+=aRow("🟠","Vence em breve",`${lNome(c.locatarioId)} · ${fmtDate(c.vencimento)} · ${fmtBRL(c.valor)}`,"cobranca"));
-  mult.forEach(m=>rows+=aRow("🚦","Multa pendente",`${lNome(m.locatarioId)} · ${m.infracao} · ${fmtBRL(m.valor)}`,"multas"));
+  mult.forEach(m=>rows+=aRow("🚦","Multa pendente",`${lNome(m.locatarioId)} · ${m.infracao} · ${fmtBRL(m.valor)}`,"multas",m.id));
   venc.forEach(x=>rows+=aRow(x.d<0?"🔴":"🟡","IPVA a vencer",`${vNome(x.v.id)} · ${x.d<0?"vencido":x.d+"d"} (${fmtDate(x.v.ipvaVenc)})`,"frota"));
   if(!rows)rows=`<div class="empty">Nenhum alerta. Frota sob controle. ✅</div>`;
   return`<div class="panel"><h3>Alertas & pendências</h3><div class="ph">Prioridades operacionais e financeiras</div>${rows}</div>`;}
-function aRow(ic,t,d,go){return`<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)">
+function aRow(ic,t,d,go,id){return`<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)">
   <span style="font-size:1.1rem">${ic}</span><div style="flex:1"><div style="font-weight:600;font-size:.9rem">${t}</div><div style="color:var(--mut);font-size:.8rem">${d}</div></div>
-  <button class="b-sm" onclick="render('${go}')">Ver</button></div>`;}
+  <button class="b-sm" onclick="${id?`VP.goto('${go}','${id}')`:`render('${go}')`}">Ver</button></div>`;}
 
 /* ===================== FROTA ===================== */
 function rFrota(v){v.innerHTML="";tableView(v,{mod:"veiculos",titleAdd:"Veículo",
@@ -552,7 +577,7 @@ function rMultas(v){const M=WORK.multas||[];const tot=M.reduce((s,m)=>s+m.valor,
       if(!rows.length)return emptyRow(10);
       const gt={"Leve":"t-info","Média":"t-warn","Grave":"t-blk","Gravíssima":"t-bad"},st={"Pendente":"t-warn","Repassada":"t-info","Paga":"t-ok","Recorrida":"t-vio"};
       return rows.map(x=>{const loc=byId(WORK.locatarios,x.locatarioId);
-        return`<tr><td>${vNome(x.veiculoId)}</td><td><b>${lNome(x.locatarioId)}</b></td><td>${x.infracao}<div style="color:var(--mut);font-size:.72rem">${x.orgao} · ${x.local}</div></td>
+        return`<tr class="clickable" onclick="if(!event.target.closest('button,a'))CRUD.verMulta('${x.id}')"><td>${vNome(x.veiculoId)}</td><td><b>${lNome(x.locatarioId)}</b></td><td>${x.infracao}<div style="color:var(--mut);font-size:.72rem">${x.orgao} · ${x.local}</div></td>
         <td>${fmtDate(x.data)}</td><td><b>${fmtBRL(x.valor)}</b></td><td>${x.pontos}</td><td><span class="tag ${gt[x.gravidade]||'t-mut'}">${x.gravidade}</span></td>
         <td>${fmtDate(x.vencimento)}</td><td><span class="tag ${st[x.status]||'t-mut'}">${x.status}</span></td>
         ${e?`<td class="acoes"><div class="row-actions"><button class="b-sm" onclick="CRUD.repassarMulta('${x.id}')">Repassar</button>${waBtn(loc.telefone,`Olá ${(loc.nome||'').split(' ')[0]}, VP CAR. Registramos uma multa no ${vNome(x.veiculoId)}: ${x.infracao} (${fmtDate(x.data)}), ${fmtBRL(x.valor)}. Ela é de sua responsabilidade — orientamos o pagamento até ${fmtDate(x.vencimento)}.`)}<button class="b-sm" onclick="CRUD.open('multas','${x.id}')">Editar</button><button class="b-danger" onclick="CRUD.remove('multas','${x.id}')">×</button></div></td>`:""}</tr>`;}).join("");}});}
@@ -642,20 +667,37 @@ function rVist(v){v.innerHTML="";tableView(v,{mod:"vistorias",titleAdd:"Vistoria
   rowsHtml:e=>{const rows=WORK.vistorias.filter(x=>matchQ("vistorias",`${vNome(x.veiculoId)} ${x.tipo} ${x.avarias}`));
     if(!rows.length)return emptyRow(8);
     return rows.map(x=>{const n=(x.fotosArr&&x.fotosArr.length)||x.fotos||0;
-      return`<tr><td>${vNome(x.veiculoId)}</td><td><span class="tag ${x.tipo==='Entrega'?'t-ok':'t-warn'}">${x.tipo}</span></td><td>${fmtDate(x.data)}</td>
+      return`<tr class="clickable" onclick="if(!event.target.closest('button,a'))CRUD.verVistoria('${x.id}')"><td>${vNome(x.veiculoId)}</td><td><span class="tag ${x.tipo==='Entrega'?'t-ok':'t-warn'}">${x.tipo}</span></td><td>${fmtDate(x.data)}</td>
       <td>${fmtNum(x.km)}</td><td>${x.combustivel}</td><td style="color:var(--mut)">${x.avarias}</td><td>📷 ${n}</td>
       <td class="acoes"><div class="row-actions"><button class="b-sm" onclick="CRUD.fotos('${x.id}')">🖼️ Fotos</button><button class="b-sm" onclick="CRUD.laudo('${x.id}')">📄 Laudo</button>${e?`<button class="b-sm" onclick="CRUD.open('vistorias','${x.id}')">Editar</button>`:''}</div></td></tr>`;}).join("");}});
   const head=document.querySelector("#view thead tr");if(head&&!head.querySelector(".acoes")){const th=document.createElement("th");th.className="acoes";th.textContent="Ações";head.appendChild(th);}}
 
 /* ===================== PORTAL (preview admin) ===================== */
-function rPortalPreview(v){
-  v.innerHTML=`<div class="tools"><label style="color:var(--mut);font-size:.8rem;align-self:center">Ver como locatário:</label>
-    <select id="pSel" onchange="VP.refresh()">${WORK.locatarios.map(l=>`<option value="${l.id}">${l.nome}</option>`).join("")}</select>
-    <div style="flex:1"></div>
-    <button class="b-ghost" onclick="CRUD.copiarLink(document.getElementById('pSel').value)">🔗 Copiar link exclusivo</button>
-    <button class="b" onclick="CRUD.enviarLink(document.getElementById('pSel').value)">${WA_SVG} Enviar link ao locatário</button>
-  </div><div id="pcontent"></div>`;
-  portalContent(document.getElementById("pcontent"),document.getElementById("pSel").value);}
+function rPortalPreview(v){const L=WORK.locatarios;
+  const reports=(WORK.ocorrencias||[]).filter(o=>o.status!=="Resolvido").length;
+  const assinados=(WORK.contratos||[]).filter(k=>k.assinatura).length;
+  const multasP=(WORK.multas||[]).filter(m=>!m.ciente&&m.status!=="Paga").length;
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Locatários com portal",L.length,"acesso exclusivo","var(--info)")}
+    ${kpi("Reports abertos",reports,"enviados pelo portal","var(--warn)")}
+    ${kpi("Contratos assinados",assinados,"eletronicamente","var(--ok)")}
+    ${kpi("Multas a assumir",multasP,"aguardando ciência","var(--violet)")}</div>
+   <div class="panel" style="margin-bottom:16px"><h3>Gestão dos portais</h3><div class="ph">Cada locatário tem um portal exclusivo. Envie o link, acompanhe assinaturas e reports, e clique em “Ver como” (ou na linha) para pré-visualizar exatamente o que o motorista enxerga.</div></div>
+   <div class="tbl-wrap"><table><thead><tr><th>Locatário</th><th>Veículo</th><th>Contrato</th><th>Reports</th><th>Multas pend.</th><th>Último acesso</th><th class="acoes">Ações</th></tr></thead><tbody>
+   ${L.map(l=>{const k=WORK.contratos.find(x=>x.locatarioId===l.id);
+     const oc=(WORK.ocorrencias||[]).filter(o=>o.locatarioId===l.id&&o.status!=="Resolvido").length;
+     const mp=(WORK.multas||[]).filter(m=>m.locatarioId===l.id&&!m.ciente&&m.status!=="Paga").length;
+     const acc=(WORK._acessos||[]).find(a=>a.origem&&/portal/i.test(a.origem)&&(a.user===l.id||a.nome===l.nome));
+     return`<tr class="clickable" onclick="if(!event.target.closest('button,a'))CRUD.verComoLocatario('${l.id}')">
+       <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:30px;height:30px;font-size:.68rem">${avatarInner(l)}</div><b>${l.nome}</b></div></td>
+       <td>${vNome(l.veiculoId)}</td>
+       <td>${k?(k.assinatura?'<span class="tag t-ok">assinado</span>':'<span class="tag t-warn">pendente</span>'):'<span class="tag t-mut">sem contrato</span>'}</td>
+       <td>${oc?`<span class="tag t-info">${oc}</span>`:'—'}</td>
+       <td>${mp?`<span class="tag t-vio">${mp}</span>`:'—'}</td>
+       <td style="color:var(--mut)">${acc?fmtDate(acc.data)+' '+acc.hora:'—'}</td>
+       <td class="acoes"><div class="row-actions"><button class="b-sm" onclick="CRUD.verComoLocatario('${l.id}')">👁️ Ver como</button><button class="b-sm" onclick="CRUD.copiarLink('${l.id}')">🔗 Link</button><button class="b-sm" onclick="CRUD.enviarLink('${l.id}')">Enviar</button></div></td>
+     </tr>`;}).join("")}
+   </tbody></table></div>`;}
 function portalContent(el,locId){const l=byId(WORK.locatarios,locId);const vc=byId(WORK.veiculos,l.veiculoId);
   const k=WORK.contratos.find(x=>x.locatarioId===locId);const cobs=WORK.cobrancas.filter(x=>x.locatarioId===locId);
   const mult=(WORK.multas||[]).filter(x=>x.locatarioId===locId);const oc=(WORK.ocorrencias||[]).filter(x=>x.locatarioId===locId);
@@ -681,7 +723,7 @@ function portalContent(el,locId){const l=byId(WORK.locatarios,locId);const vc=by
   </div>
   <div class="grid2">
     <div class="panel"><h3>Minhas multas</h3><div class="ph">Infrações sob sua responsabilidade</div>
-      ${mult.length?mult.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)"><div>${m.infracao}<div style="color:var(--mut);font-size:.72rem">${fmtDate(m.data)} · ${fmtBRL(m.valor)}</div></div>${m.ciente?'<span class="tag t-ok">ciente ✓</span>':(m.status==='Paga'?'<span class="tag t-ok">Paga</span>':`<button class="b-sm" onclick="CRUD.assumirMulta('${m.id}')">Assumir</button>`)}</div>`).join(""):'<div class="empty">Nenhuma multa. 👏</div>'}</div>
+      ${mult.length?mult.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)"><div>${m.infracao}<div style="color:var(--mut);font-size:.72rem">${fmtDate(m.data)} · ${m.orgao||'—'}${m.local?' · '+m.local:''} · <b>${fmtBRL(m.valor)}</b>${m.pontos?' · '+m.pontos+' pts':''}</div></div>${m.ciente?'<span class="tag t-ok">ciente ✓</span>':(m.status==='Paga'?'<span class="tag t-ok">Paga</span>':`<button class="b-sm" onclick="CRUD.assumirMulta('${m.id}')">Assumir</button>`)}</div>`).join(""):'<div class="empty">Nenhuma multa. 👏</div>'}</div>
     <div class="panel"><h3>Reportar / minhas ocorrências</h3><div class="ph">Fale com a VP CAR</div>
       ${oc.map(o=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><div>${o.descricao}<div style="color:var(--mut);font-size:.72rem">${o.tipo} · ${fmtDate(o.data)}</div></div><span class="tag t-info">${o.status}</span></div>`).join("")}
       <button class="b" style="margin-top:12px;width:100%" onclick="CRUD.reportarForm('${locId}')">+ Reportar algo</button></div>
@@ -725,6 +767,17 @@ function scoreOf(loc){let s=60;
   return Math.max(0,Math.min(100,Math.round(s)));}
 function scoreTier(s){return s>=85?{l:"Ouro",c:"t-gold"}:s>=70?{l:"Prata",c:"t-info"}:s>=50?{l:"Bronze",c:"t-warn"}:{l:"Risco",c:"t-bad"};}
 function scoreBadge(loc){const s=scoreOf(loc),t=scoreTier(s);return`<span class="tag ${t.c}">${s} · ${t.l}</span>`;}
+VP.scoreOf=scoreOf;VP.scoreTier=scoreTier;
+function verScore(locId){const l=byId(WORK.locatarios,locId);if(!l||!l.id)return;const s=scoreOf(l),t=scoreTier(s);
+  const cobs=WORK.cobrancas.filter(c=>c.locatarioId===l.id),pg=cobs.filter(c=>c.statusPag==="Pago").length,at=cobs.filter(c=>c.statusPag==="Atrasado").length;
+  const mu=(WORK.multas||[]).filter(m=>m.locatarioId===l.id),pts=mu.reduce((a,m)=>a+(m.pontos||0),0);
+  const mm=Math.max(0,Math.round((new Date("2026-07-12")-new Date(l.inicio))/2.63e9));
+  VP.detalhe(`Score · ${l.nome}`,
+    `<div style="text-align:center;margin:2px 0 14px"><div style="font-size:2.6rem;font-weight:700;line-height:1">${s}</div><span class="tag ${t.c}">${t.l}</span></div>`+
+    VP.detRow("Situação atual",l.statusLoc)+VP.detRow("Pagamentos",`${pg} pago(s)${at?` · ${at} atraso(s)`:""}`)+
+    VP.detRow("Multas",`${mu.length} (${pts} ponto(s))`)+VP.detRow("Tempo de casa",`${mm} mês(es)`)+
+    VP.detRow("Veículo",vNome(l.veiculoId))+VP.detRow("Plano",`${l.plano} · ${fmtBRL(l.valorAluguel)}`),
+    waBtn(l.telefone,`Olá ${l.nome.split(" ")[0]}, aqui é da VP CAR.`,"WhatsApp"));}
 function rScore(v){const rows=WORK.locatarios.map(l=>{const s=scoreOf(l);return{l,s,t:scoreTier(s)};}).sort((a,b)=>b.s-a.s);
   const media=Math.round(rows.reduce((a,b)=>a+b.s,0)/(rows.length||1)),ouro=rows.filter(r=>r.s>=85).length,risco=rows.filter(r=>r.s<50).length;
   v.innerHTML=`<div class="kpis">
@@ -735,7 +788,7 @@ function rScore(v){const rows=WORK.locatarios.map(l=>{const s=scoreOf(l);return{
    <div class="panel" style="margin-bottom:16px"><h3>Como o score é calculado</h3><div class="ph">Pontualidade de pagamento, multas e pontos na CNH, avarias, tempo de casa e situação atual. Use para crédito, valor de caução e renovação de contrato.</div></div>
    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Locatário</th><th>Score</th><th>Classe</th><th>Pagamentos</th><th>Multas</th><th>Tempo</th><th>Contato</th></tr></thead><tbody>
    ${rows.map((r,i)=>{const cobs=WORK.cobrancas.filter(c=>c.locatarioId===r.l.id),pg=cobs.filter(c=>c.statusPag==="Pago").length,at=cobs.filter(c=>c.statusPag==="Atrasado").length,mu=(WORK.multas||[]).filter(m=>m.locatarioId===r.l.id).length,mm=Math.max(0,Math.round((new Date("2026-07-12")-new Date(r.l.inicio))/2.63e9));
-     return`<tr><td>${i+1}</td><td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:30px;height:30px;font-size:.68rem">${avatarInner(r.l)}</div><b>${r.l.nome}</b></div></td>
+     return`<tr class="clickable" onclick="if(!event.target.closest('button,a'))verScore('${r.l.id}')"><td>${i+1}</td><td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:30px;height:30px;font-size:.68rem">${avatarInner(r.l)}</div><b>${r.l.nome}</b></div></td>
      <td><b style="font-size:1.05rem">${r.s}</b></td><td><span class="tag ${r.t.c}">${r.t.l}</span></td>
      <td>${pg} pago(s)${at?` · <span style="color:var(--bad)">${at} atraso</span>`:''}</td><td>${mu}</td><td>${mm} mês(es)</td>
      <td>${waBtn(r.l.telefone,`Olá ${r.l.nome.split(" ")[0]}, aqui é da VP CAR.`)}</td></tr>`;}).join("")}
@@ -755,7 +808,7 @@ function rReservas(v){const R=WORK.reservas||[];
     cols:["Nome","Telefone","Veículo desejado","Plano","Data","Status"],
     rowsHtml:e=>{const fs=document.getElementById("fRs")?.value||"";const rows=R.filter(x=>(!fs||x.status===fs)&&matchQ("reservas",`${x.nome} ${x.veiculoDesejado} ${x.plano}`));
       if(!rows.length)return emptyRow(7);const st={"Fila":"t-warn","Reservado":"t-info","Convertido":"t-ok","Cancelado":"t-mut"};
-      return rows.map(x=>`<tr><td><b>${x.nome}</b></td><td>${x.telefone}</td><td>${x.veiculoDesejado}</td><td>${x.plano}</td><td>${fmtDate(x.data)}</td><td><span class="tag ${st[x.status]||'t-mut'}">${x.status}</span></td>
+      return rows.map(x=>`<tr><td><b>${x.nome}</b></td><td>${VP.maskPhoneBR(x.telefone)}</td><td>${x.veiculoDesejado}</td><td>${x.plano}</td><td>${fmtDate(x.data)}</td><td><span class="tag ${st[x.status]||'t-mut'}">${x.status}</span></td>
         ${e?`<td class="acoes"><div class="row-actions"><button class="b-sm" onclick="CRUD.converterReserva('${x.id}')">✓ Converter</button>${waBtn(x.telefone,`Olá ${x.nome.split(" ")[0]}! Aqui é da VP CAR. Temos um carro disponível para você. Vamos fechar sua locação? 🚗`)}<button class="b-sm" onclick="CRUD.open('reservas','${x.id}')">Editar</button><button class="b-danger" onclick="CRUD.remove('reservas','${x.id}')">×</button></div></td>`:""}</tr>`).join("");}});}
 
 /* ===================== RECORRÊNCIA PIX ===================== */
@@ -787,7 +840,7 @@ function rAlertas(v){const N=WORK._notificacoes||[];const naoLidas=N.filter(n=>!
     ${kpi("Multas a assumir",(WORK.multas||[]).filter(m=>!m.ciente&&m.status!=="Paga").length,"aguardando ciência","var(--violet)")}</div>
   <div class="panel" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3>Central de notificações</h3><div class="ph">Tudo que o locatário faz chega aqui: contratos assinados, reports e ciência de multa.</div></div>${N.length?`<button class="b-sm" onclick="CRUD.marcarLidas()">Marcar todas como lidas</button>`:''}</div>
     ${N.length?N.map(n=>{const ic={assinatura:"✍️",report:"📣",multa:"🚦",ciente:"✅",pagamento:"💰"}[n.tipo]||"🔔";
-      return`<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)"><span style="font-size:1.1rem">${ic}</span><div style="flex:1"><b style="font-size:.9rem">${n.titulo}</b> ${n.lida?'':'<span class="tag t-gold">novo</span>'}<div style="color:var(--mut);font-size:.8rem">${n.desc} · ${fmtDate(n.data)} ${n.hora}</div></div></div>`;}).join(""):'<div class="empty">Nenhuma notificação.</div>'}</div>
+      return`<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)"><span style="font-size:1.1rem">${ic}</span><div style="flex:1"><b style="font-size:.9rem">${n.titulo}</b> ${n.lida?'':'<span class="tag t-gold">novo</span>'}<div style="color:var(--mut);font-size:.8rem">${n.desc} · ${fmtDate(n.data)} ${n.hora}</div></div>${n.link?`<button class="b-sm" onclick="VP.goto('${n.link.mod}','${n.link.id}')">Ver</button>`:''}</div>`;}).join(""):'<div class="empty">Nenhuma notificação.</div>'}</div>
   <div class="panel"><h3>Alertas operacionais</h3><div class="ph">Derivados dos dados atuais</div>
     ${atr.map(c=>`<div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><span>🔴</span><div style="flex:1"><b style="font-size:.88rem">Aluguel em atraso</b><div style="color:var(--mut);font-size:.8rem">${lNome(c.locatarioId)} · ${vNome(c.veiculoId)} · ${fmtBRL(c.valor)}</div></div><button class="b-sm" onclick="render('cobranca')">Ver</button></div>`).join("")}
     ${venc.map(o=>`<div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><span>${o.d<0?'🔴':'🟡'}</span><div style="flex:1"><b style="font-size:.88rem">IPVA a vencer</b><div style="color:var(--mut);font-size:.8rem">${vNome(o.x.id)} · ${o.d<0?'vencido':o.d+'d'} (${fmtDate(o.x.ipvaVenc)})</div></div><button class="b-sm" onclick="render('documentos')">Ver</button></div>`).join("")||(atr.length?'':'<div class="empty">Nenhum alerta operacional.</div>')}
@@ -814,14 +867,15 @@ function rDocumentos(v){const rows=[];
    <div class="tbl-wrap"><table><thead><tr><th>Documento</th><th>Item</th><th>Vencimento</th><th>Status</th><th class="acoes">Ações</th></tr></thead><tbody>
    ${rows.map(r=>{const d=daysTo(r.venc);const st=d<0?'<span class="tag t-bad">vencido</span>':d<=30?`<span class="tag t-warn">${d}d</span>`:'<span class="tag t-ok">vigente</span>';
      const act=r.kind==="veic"?`<button class="b-sm" onclick="CRUD.docsVeiculo('${r.ref.id}')">📎 Arquivos</button><button class="b-sm" onclick="CRUD.open('veiculos','${r.ref.id}')">Editar</button>`:`${waBtn(r.ref.telefone,`Olá ${r.ref.nome.split(" ")[0]}, VP CAR: sua CNH vence em ${fmtDate(r.venc)}. Renove para seguir rodando. 🚗`)}<button class="b-sm" onclick="CRUD.open('locatarios','${r.ref.id}')">Editar</button>`;
-     return`<tr><td>${r.tipo}</td><td><b>${r.item}</b></td><td>${fmtDate(r.venc)}</td><td>${st}</td><td class="acoes"><div class="row-actions">${act}</div></td></tr>`;}).join("")}
+     const goRow=r.kind==="veic"?`CRUD.docsVeiculo('${r.ref.id}')`:`CRUD.open('locatarios','${r.ref.id}')`;
+     return`<tr class="clickable" onclick="if(!event.target.closest('button,a'))${goRow}"><td>${r.tipo}</td><td><b>${r.item}</b></td><td>${fmtDate(r.venc)}</td><td>${st}</td><td class="acoes"><div class="row-actions">${act}</div></td></tr>`;}).join("")}
    </tbody></table></div>`;}
 
 /* ===================== Tema + Boot ===================== */
 function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getElementById(id);if(e)e.src="vpcar-branca.png";});
   document.querySelectorAll("#portalLogin .logo,#lock .logo").forEach(e=>e.src="vpcar-branca.png");}
 (function boot(){document.body.setAttribute("data-theme","dark");setLogos();
-  installPwToggles(document);
+  installPwToggles(document);rehydrateMedia();
   // acesso por link exclusivo do locatário
   var q=new URLSearchParams(location.search);var pt=q.get("p")||q.get("portal");
   if(pt){var loc=(WORK.locatarios||[]).find(function(l){return portalSlug(l)===pt;});
@@ -829,7 +883,7 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
   try{const s=sessionStorage.getItem("vpcar_s");if(s){const o=JSON.parse(s);SESSION=(WORK._users||[]).find(u=>u.user===o.u)||null;if(SESSION)startApp();}}catch(e){}
 })();
 </script>
-<script src="app-crud.js?v=2"></script>
+<script src="app-crud.js?v=3"></script>
 <script src="aura.js?v=6"></script>
 </body>
 </html>

@@ -101,6 +101,7 @@
       if((sc.arr==="_users")&&VP.session&&VP.session.user===arr[i].user){Object.assign(VP.session,arr[i]);VP.refreshUserChip&&VP.refreshUserChip();}
       toast("Atualizado.");}
     else{if(sc.arr!=="_users")rec.id=uid(mod[0].toUpperCase());else{rec.inicial=VP.initials(rec.nome);}arr.push(rec);persist(mod,"create",rec);toast(sc.titulo+" criado.");}
+    if(rec.foto&&VP.saveMediaFor){const savedId=rec.id||id;if(sc.arr==="_users")VP.saveMediaFor("users",rec.user,rec.foto);else if(mod==="locatarios")VP.saveMediaFor("locatarios",savedId,rec.foto);}
     if(mod==="cobrancas")sinc(rec);PIC={};close();VP.refresh();}
   function remove(mod,id){if(!confirm("Excluir este registro?"))return;const sc=SCHEMAS[mod];const arr=W()[sc.arr||mod];
     const i=arr.findIndex(x=>x.id===id);if(i>=0){arr.splice(i,1);persist(mod,"delete",{id},i);toast("Excluído.");VP.refresh();}}
@@ -113,7 +114,8 @@
     modal(`<h3>Meu perfil</h3><div style="margin-bottom:8px;color:var(--mut);font-size:.85rem">${u.nome} · @${u.user}</div>
       <label>Foto do perfil</label><div class="photo-pick">${cur}<input type="file" accept="image/*" onchange="CRUD._pickFoto(event,'foto')" style="flex:1"/></div>
       <div class="modal-actions"><button class="b-ghost" onclick="CRUD.close()">Cancelar</button><button class="b" onclick="CRUD._salvarFoto()">Salvar</button></div>`);}
-  function _salvarFoto(){const u=VP.session;if(PIC.foto!==undefined){u.foto=PIC.foto;const r=W()._users.find(x=>x.user===u.user);if(r)r.foto=PIC.foto;VP.refreshUserChip&&VP.refreshUserChip();toast("Foto atualizada.");}PIC={};close();}
+  function _salvarFoto(){const u=VP.session;if(PIC.foto!==undefined){u.foto=PIC.foto;const r=W()._users.find(x=>x.user===u.user);if(r)r.foto=PIC.foto;
+      if(VP.saveMediaFor)VP.saveMediaFor("users",u.user,PIC.foto);VP.refreshUserChip&&VP.refreshUserChip();toast("Foto atualizada.");}PIC={};close();}
   function trocarSenha(){document.getElementById("udrop").classList.add("hidden");
     modal(`<h3>Trocar senha</h3><div class="form-grid">
       <div class="full"><label>Senha atual</label><input id="pw_cur" type="password"/></div>
@@ -158,7 +160,7 @@
   function _enviarReport(locId){const dd=document.getElementById("rp_desc").value.trim();if(!dd){toast("Descreva o que aconteceu.");return;}
     const data=document.getElementById("rp_data").value||"2026-07-12",tipo=document.getElementById("rp_tipo").value;const l=byId(W().locatarios,locId);
     W().ocorrencias=W().ocorrencias||[];W().ocorrencias.push({id:uid("O"),locatarioId:locId,veiculoId:l.veiculoId,data,tipo,descricao:dd,status:"Aberto"});
-    if(VP.notif)VP.notif("report","Novo report de locatário",`${l.nome} — ${tipo}: ${dd.slice(0,60)}`);persist("ocorrencias","create",{});
+    if(VP.notif)VP.notif("report","Novo report de locatário",`${l.nome} — ${tipo}: ${dd.slice(0,60)}`,{mod:"report",id:locId});persist("ocorrencias","create",{});
     modal(`<div style="text-align:center;padding:16px 6px">
       <div style="font-size:2.8rem;margin-bottom:6px">✅</div>
       <h3 style="margin-bottom:8px">Report enviado!</h3>
@@ -166,7 +168,7 @@
       <div class="modal-actions" style="justify-content:center"><button class="b" onclick="CRUD.close()">Voltar ao meu portal</button></div></div>`);
     VP.refresh();}
   function assumirMulta(id){const m=(W().multas||[]).find(x=>x.id===id);if(!m)return;m.ciente=true;m.cienteData="2026-07-12";const l=byId(W().locatarios,m.locatarioId);
-    if(VP.notif)VP.notif("ciente","Multa assumida pelo locatário",`${l.nome} assumiu a multa: ${m.infracao} (${fmtBRL(m.valor)})`);persist("multas","update",m);
+    if(VP.notif)VP.notif("ciente","Multa assumida pelo locatário",`${l.nome} assumiu a multa: ${m.infracao} (${fmtBRL(m.valor)})`,{mod:"multas",id:m.id});persist("multas","update",m);
     toast("Você assumiu a multa. Obrigado!");VP.refresh();}
   function marcarLidas(){(W()._notificacoes||[]).forEach(n=>n.lida=true);toast("Notificações marcadas como lidas.");VP.refresh();}
 
@@ -180,7 +182,7 @@
       <div style="color:var(--mut);font-size:.82rem;margin-bottom:12px">${vs.tipo} · ${fmtDate(vs.data)} · ${(vs.fotosArr||[]).length} foto(s)</div>
       <div class="gal" id="galBox">${cells||'<div class="empty" style="grid-column:1/-1">Nenhuma foto ainda. Envie abaixo.</div>'}</div>
       <div class="modal-actions" style="justify-content:space-between">
-        <label class="b-ghost" style="cursor:pointer">➕ Enviar fotos<input type="file" accept="image/*" multiple style="display:none" onchange="CRUD._addFotos('${vs.id}',event)"/></label>
+        <label class="b-ghost" style="cursor:pointer">Adicionar fotos<input type="file" accept="image/*" multiple style="display:none" onchange="CRUD._addFotos('${vs.id}',event)"/></label>
         <button class="b" onclick="CRUD.close()">Concluir</button></div>`);}
   function _addFotos(id,e){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;vs.fotosArr=vs.fotosArr||[];
     const files=[...e.target.files];let pend=files.length;if(!pend)return;
@@ -243,7 +245,7 @@
       <p class="cl"><span class="num">4.</span> <b>Multas e infrações.</b> Multas de trânsito no período de posse são de responsabilidade do LOCATÁRIO, incluindo pontuação na CNH e indicação do condutor junto ao órgão competente.</p>
       <p class="cl"><span class="num">5.</span> <b>Conservação.</b> O veículo é entregue mediante vistoria fotografada, devendo ser devolvido nas mesmas condições, ressalvado o desgaste natural de uso.</p>
       <p class="cl"><span class="num">6.</span> <b>Rescisão.</b> O descumprimento de qualquer cláusula, em especial a inadimplência, autoriza a rescisão imediata e a retomada do veículo.</p>
-      <div class="sign"><div>${k.assinatura?`<img src="${k.assinatura.img}" style="max-height:44px;display:block;margin:0 auto 2px"/>${l.nome} · <span style="color:#8F8F96">assinado eletronicamente em ${fmtDate(k.assinatura.data)}</span>`:(l.nome||'Locatário(a)')+'<br><span style="color:#8F8F96">Locatário(a)</span>'}</div><div>VP CAR<br><span style="color:#8F8F96">Locadora</span></div></div>`,
+      <div class="sign"><div>${k.assinatura?`<img src="${k.assinatura.img}" style="max-height:46px;display:block;margin:-42px auto 4px"/><b>${l.nome}</b><br><span style="color:#8F8F96">assinado eletronicamente em ${fmtDate(k.assinatura.data)}</span>`:(l.nome||'Locatário(a)')+'<br><span style="color:#8F8F96">Locatário(a)</span>'}</div><div>VP CAR<br><span style="color:#8F8F96">Locadora</span></div></div>`,
       {tag:"Contrato",wm:true});}
 
   function laudo(id){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;const v=byId(W().veiculos,vs.veiculoId);
@@ -306,7 +308,7 @@
   function _sigClear(){if(SIG)SIG.getContext("2d").clearRect(0,0,SIG.width,SIG.height);}
   function _sigSave(id){const k=W().contratos.find(x=>x.id===id);if(!k){close();return;}if(!SIG){close();return;}
     const l=byId(W().locatarios,k.locatarioId);k.assinatura={nome:l.nome,data:"2026-07-12",img:SIG.toDataURL("image/png")};persist("contratos","update",k);
-    if(VP.notif)VP.notif("assinatura","Contrato assinado",`${l.nome} assinou o contrato ${k.id} eletronicamente`);
+    if(VP.notif)VP.notif("assinatura","Contrato assinado",`${l.nome} assinou o contrato ${k.id} eletronicamente`,{mod:"contratos",id:k.id});
     toast("Contrato assinado eletronicamente. ✓");close();VP.refresh();}
 
   /* ---- Recorrência PIX + Reservas ---- */
@@ -319,12 +321,37 @@
   function converterReserva(id){const r=(W().reservas||[]).find(x=>x.id===id);if(!r)return;r.status="Convertido";persist("reservas","update",r);
     toast("Reserva convertida. Cadastre o locatário para vincular o veículo.");VP.refresh();}
 
-  function modal(html){close();const bg=document.createElement("div");bg.className="modal-bg";bg.id="modalBg";
-    bg.innerHTML=`<div class="modal">${html}</div>`;bg.onclick=e=>{if(e.target===bg)close();};document.body.appendChild(bg);
+  function modal(html,wide){close();const bg=document.createElement("div");bg.className="modal-bg";bg.id="modalBg";
+    bg.innerHTML=`<div class="modal${wide?' wide':''}">${html}</div>`;bg.onclick=e=>{if(e.target===bg)close();};document.body.appendChild(bg);
     if(VP.installPwToggles)VP.installPwToggles(bg);}
   function close(){const m=document.getElementById("modalBg");if(m)m.remove();}
 
+  /* ---- Telas de detalhe (somente leitura) ---- */
+  function detRow(k,v){return `<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v==null||v===""?"—":v}</span></div>`;}
+  function detalhe(title,body,acts){modal(`<h3>${title}</h3><div class="det">${body}</div><div class="modal-actions">${acts||""}<button class="b" onclick="CRUD.close()">Fechar</button></div>`);}
+  function verMulta(id){const m=(W().multas||[]).find(x=>x.id===id);if(!m)return;const l=byId(W().locatarios,m.locatarioId),v=byId(W().veiculos,m.veiculoId);
+    const st={"Pendente":"t-warn","Repassada":"t-info","Paga":"t-ok","Recorrida":"t-vio"}[m.status]||"t-mut";
+    const body=detRow("Veículo",vNome(m.veiculoId)+(v&&v.placa?` · ${v.placa}`:""))+detRow("Locatário",lNome(m.locatarioId))+detRow("Infração",m.infracao)
+      +detRow("Órgão / Local",(m.orgao||"—")+" · "+(m.local||"—"))+detRow("Data",fmtDate(m.data))+detRow("Vencimento",fmtDate(m.vencimento))
+      +detRow("Valor",`<b>${fmtBRL(m.valor)}</b>`)+detRow("Pontos",m.pontos)+detRow("Gravidade",m.gravidade)
+      +detRow("Status",`<span class="tag ${st}">${m.status}</span>`)+detRow("Ciência do locatário",m.ciente?`✅ em ${fmtDate(m.cienteData)}`:"pendente");
+    const acts=(l&&l.telefone?waBtn(l.telefone,`Olá ${(l.nome||"").split(" ")[0]}, VP CAR. Sobre a multa ${m.infracao} (${fmtBRL(m.valor)})...`,"WhatsApp"):"")+`<button class="b-ghost" onclick="CRUD.open('multas','${m.id}')">Editar</button>`;
+    detalhe(`Multa · ${m.infracao}`,body,acts);}
+  function verVistoria(id){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;vs.fotosArr=vs.fotosArr||[];
+    const thumbs=(vs.fotosArr||[]).slice(0,12).map((s,i)=>`<img src="${s}" class="thumb" onclick="CRUD._lightbox('${vs.id}',${i})"/>`).join("")||'<div class="empty" style="grid-column:1/-1">Sem fotos anexadas.</div>';
+    const body=detRow("Veículo",vNome(vs.veiculoId))+detRow("Tipo",vs.tipo)+detRow("Data",fmtDate(vs.data))+detRow("KM",fmtNum(vs.km))
+      +detRow("Combustível",vs.combustivel)+detRow("Avarias",vs.avarias||"Sem avarias")+detRow("Responsável",vs.responsavel);
+    modal(`<h3>Vistoria · ${vNome(vs.veiculoId)}</h3><div class="det">${body}</div>
+      <div class="det-k" style="margin-bottom:2px">Fotos (${(vs.fotosArr||[]).length})</div><div class="thumbs">${thumbs}</div>
+      <div class="modal-actions"><button class="b-ghost" onclick="CRUD.fotos('${vs.id}')">🖼️ Gerenciar fotos</button><button class="b-ghost" onclick="CRUD.laudo('${vs.id}')">📄 Laudo</button><button class="b" onclick="CRUD.close()">Fechar</button></div>`);}
+  function verComoLocatario(id){const l=byId(W().locatarios,id);if(!l)return;
+    modal(`<h3>Portal do locatário · ${l.nome}</h3><div style="color:var(--mut);font-size:.82rem;margin-bottom:12px">Pré-visualização — é exatamente o que o motorista vê no portal dele.</div><div id="pvw"></div>
+      <div class="modal-actions"><button class="b-ghost" onclick="CRUD.copiarLink('${id}')">🔗 Copiar link</button><button class="b" onclick="CRUD.close()">Fechar</button></div>`,true);
+    if(window.portalContent)window.portalContent(document.getElementById("pvw"),id);}
+  VP.detalhe=detalhe;VP.detRow=detRow;
+
   window.CRUD={open,save,remove,close,report,marcarPago,avisar,bloquear,repassarMulta,reportarForm,_enviarReport,assumirMulta,marcarLidas,contrato,laudo,
     fotos,_addFotos,_delFoto,_lightbox,_pickFoto,meuPerfil,_salvarFoto,trocarSenha,_salvarSenha,copiarLink,enviarLink,
-    gerarProximas,converterReserva,docsVeiculo,_addDocs,_delDoc,_docLightbox,assinarContrato,_sigInit,_sigClear,_sigSave,SCHEMAS};
+    gerarProximas,converterReserva,docsVeiculo,_addDocs,_delDoc,_docLightbox,assinarContrato,_sigInit,_sigClear,_sigSave,
+    verMulta,verVistoria,verComoLocatario,detalhe,detRow,SCHEMAS};
 })();
