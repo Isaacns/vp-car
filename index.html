@@ -129,7 +129,7 @@ main{padding:24px 30px 40px;max-width:1200px;width:100%}
 .tools input,.tools select{height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-family:inherit;font-size:.85rem}
 .tools input:focus,.tools select:focus{outline:none;border-color:var(--gold)}
 .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:720px}
+table{width:max-content;min-width:100%;border-collapse:collapse;font-size:.85rem}
 th{text-align:left;padding:12px 14px;font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);border-bottom:1px solid var(--line);white-space:nowrap;background:var(--card)}
 td{padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle}
 tr:last-child td{border-bottom:none}
@@ -243,7 +243,6 @@ th.acoes,td.acoes{text-align:right}
         <div><h2 id="viewTitle">Visão Geral</h2><div class="subt" id="viewSub">Painel consolidado da frota</div></div>
       </div>
       <div class="tb-actions">
-        <button class="b-sm" onclick="toggleTheme()" id="themeBtn" style="width:36px;padding:0">☾</button>
         <div class="userchip" id="userchip" onclick="toggleUserDrop(event)">
           <div class="who"><div class="nm" id="ucName">—</div><div class="rl" id="ucRole">—</div></div>
           <div class="avatar" id="ucAvatar">VP</div>
@@ -285,9 +284,11 @@ function waLink(tel,msg){const t=String(tel||"").replace(/\D/g,"");const p=t.sta
 function waBtn(tel,msg,label){return`<a class="b-wa" target="_blank" rel="noopener" href="${waLink(tel,msg)}" title="WhatsApp">${WA_SVG}${label?`<span>${label}</span>`:""}</a>`;}
 function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3400);}
 function logAcesso(user,nome,acao,origem){WORK._acessos=WORK._acessos||[];const d=new Date();WORK._acessos.unshift({data:"2026-07-12",hora:d.toTimeString().slice(0,5),user,nome,acao,origem:origem||"Web"});}
-function portalToken(loc){return loc.token||("k"+btoa(unescape(encodeURIComponent(loc.id))).replace(/=/g,""));}
-function portalUrl(loc){return location.origin+location.pathname+"?portal="+portalToken(loc);}
-window.VP={get WORK(){return WORK;},fmtBRL,fmtDate,fmtNum,byId,vNome,lNome,waLink,waBtn,toast,WA_SVG,initials,avatarInner,portalUrl,portalToken,refresh:()=>render(CURRENT),get session(){return SESSION;},startApp:()=>startApp()};
+function portalSlug(loc){const base=(loc.nome||"").toLowerCase().normalize("NFD").replace(/[^a-z]/g,"").slice(0,5);return base+(loc.id||"").replace(/\D/g,"");}
+function portalUrl(loc){return location.origin+location.pathname+"?p="+portalSlug(loc);}
+function pushNotif(tipo,titulo,desc){WORK._notificacoes=WORK._notificacoes||[];WORK._notificacoes.unshift({id:"N"+Date.now().toString(36),tipo,titulo,desc,data:"2026-07-12",hora:new Date().toTimeString().slice(0,5),lida:false});}
+window.VP={get WORK(){return WORK;},fmtBRL,fmtDate,fmtNum,byId,vNome,lNome,waLink,waBtn,toast,WA_SVG,initials,avatarInner,portalUrl,portalSlug,notif:pushNotif,
+  refresh:()=>{if(PORTAL){portalContent(document.getElementById("view"),PORTAL.id);}else render(CURRENT);},get session(){return SESSION;},startApp:()=>startApp()};
 
 /* ===================== Auth ===================== */
 function doLogin(e){e.preventDefault();
@@ -329,6 +330,7 @@ document.addEventListener("click",()=>document.getElementById("udrop")?.classLis
 /* ===================== Navegação ===================== */
 const MODULES=[
   {id:"home",ic:"◧",label:"Visão Geral",sub:"Painel consolidado da frota",grp:null,acc:"var(--gold)"},
+  {id:"alertas",ic:"🔔",label:"Alertas",sub:"Central de notificações",grp:null,acc:"var(--gold)"},
   {id:"frota",ic:"🚗",label:"Frota",sub:"Veículos, IPVA, seguro e status",grp:"Operação",acc:"var(--info)"},
   {id:"locatarios",ic:"👤",label:"Locatários",sub:"Motoristas de aplicativo",grp:"Operação",acc:"var(--ok)"},
   {id:"cobranca",ic:"⚡",label:"Cobrança & Bloqueio",sub:"Vencimentos e bloqueio via satélite",grp:"Operação",acc:"var(--block)"},
@@ -348,14 +350,17 @@ const MODULES=[
 function buildNav(){const nav=document.getElementById("nav");nav.innerHTML="";let grp=null;
   MODULES.forEach(m=>{if(m.id==="usuarios"&&!(SESSION.perfil==="master"||SESSION.perfil==="admin"))return;
     if(m.grp&&m.grp!==grp){grp=m.grp;const s=document.createElement("div");s.className="sep";s.textContent=grp;nav.appendChild(s);}
-    const b=document.createElement("button");b.dataset.id=m.id;b.innerHTML=`<span class="ic">${m.ic}</span><span>${m.label}</span>`;b.onclick=()=>render(m.id);nav.appendChild(b);});}
+    const b=document.createElement("button");b.dataset.id=m.id;
+    const un=(WORK._notificacoes||[]).filter(n=>!n.lida).length;
+    b.innerHTML=`<span class="ic">${m.ic}</span><span>${m.label}</span>`+(m.id==="alertas"&&un?`<span style="margin-left:auto;background:var(--gold);color:#0B0B0D;font-size:.62rem;font-weight:800;padding:1px 7px;border-radius:999px">${un}</span>`:"");
+    b.onclick=()=>render(m.id);nav.appendChild(b);});}
 function render(id){CURRENT=id;const m=MODULES.find(x=>x.id===id)||MODULES[0];
   document.getElementById("viewTitle").textContent=m.label;document.getElementById("viewSub").textContent=m.sub;
   document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.id===id));
   document.getElementById("side").classList.remove("open");
   Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};
   const v=document.getElementById("view");v.style.setProperty("--acc",m.acc);
-  ({home:rHome,frota:rFrota,locatarios:rLoc,cobranca:rCob,recorrencia:rRecorrencia,reservas:rReservas,multas:rMultas,manutencao:rManut,alavancagem:rAlav,
+  ({home:rHome,alertas:rAlertas,frota:rFrota,locatarios:rLoc,cobranca:rCob,recorrencia:rRecorrencia,reservas:rReservas,multas:rMultas,manutencao:rManut,alavancagem:rAlav,
     financeiro:rFin,score:rScore,contratos:rContr,vistorias:rVist,documentos:rDocumentos,portal:rPortalPreview,usuarios:rUsuarios}[id]||rHome)(v);
   window.scrollTo({top:0,behavior:"smooth"});}
 
@@ -447,13 +452,4 @@ function rLoc(v){v.innerHTML="";tableView(v,{mod:"locatarios",titleAdd:"Locatár
       const msg=`Olá ${x.nome.split(" ")[0]}, aqui é da VP CAR. `+(inad?`Consta pendência no aluguel do ${vNome(x.veiculoId)}. Pode confirmar o pagamento para evitarmos o bloqueio? 🚗`:`Tudo certo com sua locação? Estamos à disposição.`);
       return`<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:32px;height:32px;font-size:.72rem">${avatarInner(x)}</div><div><b>${x.nome}</b><div style="color:var(--mut);font-size:.72rem">${x.cpf}</div></div></div></td>
       <td><span class="tag t-info">${x.app}</span></td><td>${ear}</td><td>${vNome(x.veiculoId)}</td><td>${x.plano}</td>
-      <td>${fmtBRL(x.valorAluguel)}</td><td>${inad?'<span class="tag t-bad">Inadimplente</span>':'<span class="tag t-ok">Ativo</span>'}</td>
-      <td>${scoreBadge(x)}</td><td>${waBtn(x.telefone,msg)}</td>${e?actBtns("locatarios",x.id):""}</tr>`;}).join("");}});}
-
-/* ===================== COBRANÇA & BLOQUEIO ===================== */
-function rCob(v){const a=agg();
-  v.innerHTML=`<div class="kpis">
-    ${kpi("Recebido no ciclo",fmtBRL(a.recebido),"confirmados","var(--ok)")}
-    ${kpi("A receber",fmtBRL(a.aReceber),"em aberto","var(--warn)")}
-    ${kpi("Em atraso",fmtBRL(a.atrasado),a.inad+" inadimplente(s)","var(--bad)")}
-    ${kpi("Bloqueios ativos",a.bloq,"via satélite","var(--block)")}</di
+      <td>${fmtBRL(x.valorAluguel)}</td><td>${inad?'<span class="

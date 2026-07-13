@@ -140,25 +140,24 @@
       window.open(VP.waLink(l.telefone,`🔒 VP CAR — Seu veículo ${vNome(c.veiculoId)} foi BLOQUEADO por falta de pagamento (${c.competencia}, ${fmtBRL(c.valor)}). Regularize via PIX para desbloqueio imediato.`),"_blank","noopener");
       toast("🛰️ Bloqueio enviado ("+v.rastreador+").");}persist("cobrancas","update",c);VP.refresh();}
   function repassarMulta(id){const m=(W().multas||[]).find(x=>x.id===id);if(!m)return;m.status="Repassada";persist("multas","update",m);toast("Multa repassada ao locatário.");VP.refresh();}
-  function reportar(locId){const desc=prompt("Descreva a ocorrência (será enviada à VP CAR):");if(!desc)return;
-    W().ocorrencias=W().ocorrencias||[];W().ocorrencias.push({id:uid("O"),locatarioId:locId,veiculoId:byId(W().locatarios,locId).veiculoId,data:"2026-07-12",tipo:"Reportado",descricao:desc,status:"Aberto"});
-    toast("Ocorrência registrada. A VP CAR foi notificada.");VP.refresh();}
-
-  /* ---- Vistorias: galeria de fotos ---- */
-  function fotos(id){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;vs.fotosArr=vs.fotosArr||[];renderGaleria(vs);}
-  function renderGaleria(vs){
-    const cells=(vs.fotosArr||[]).map((src,i)=>`<div class="cell"><img src="${src}" onclick="CRUD._lightbox('${vs.id}',${i})"/>
-      <div class="ov"><a href="${src}" download="vistoria-${vs.id}-${i+1}.jpg" title="Baixar">⬇</a>
-      <button title="Apagar" onclick="CRUD._delFoto('${vs.id}',${i})">✕</button></div></div>`).join("");
-    modal(`<h3>Fotos da vistoria — ${vNome(vs.veiculoId)}</h3>
-      <div style="color:var(--mut);font-size:.82rem;margin-bottom:12px">${vs.tipo} · ${fmtDate(vs.data)} · ${(vs.fotosArr||[]).length} foto(s)</div>
-      <div class="gal" id="galBox">${cells||'<div class="empty" style="grid-column:1/-1">Nenhuma foto ainda. Envie abaixo.</div>'}</div>
-      <div class="modal-actions" style="justify-content:space-between">
-        <label class="b-ghost" style="cursor:pointer">➕ Enviar fotos<input type="file" accept="image/*" multiple style="display:none" onchange="CRUD._addFotos('${vs.id}',event)"/></label>
-        <button class="b" onclick="CRUD.close()">Concluir</button></div>`);}
-  function _addFotos(id,e){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;vs.fotosArr=vs.fotosArr||[];
-    const files=[...e.target.files];let pend=files.length;if(!pend)return;
-    files.forEach(f=>{const r=new FileReader();r.onload=()=>{vs.fotosArr.push(r.result);vs.fotos=vs.fotosArr.length;if(--pend===0){renderGaleria(vs);toast(files.length+" foto(s) adicionada(s).");}};r.readAsDataURL(f);});}
-  function _delFoto(id,i){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;if(!confirm("Apagar esta foto?"))return;vs.fotosArr.splice(i,1);vs.fotos=vs.fotosArr.length;renderGaleria(vs);}
-  function _lightbox(id,i){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;const src=vs.fotosArr[i];
-    const lb=document.createElement("
+  function reportarForm(locId){const l=byId(W().locatarios,locId);
+    modal(`<h3>Reportar algo à VP CAR</h3>
+      <div style="color:var(--mut);font-size:.85rem;margin-bottom:12px">${l.nome} · ${vNome(l.veiculoId)}</div>
+      <div class="form-grid">
+        <div><label>Data do ocorrido</label><input id="rp_data" type="date" value="2026-07-12"/></div>
+        <div><label>Tipo</label><select id="rp_tipo"><option>Manutenção</option><option>Sinistro/Acidente</option><option>Dúvida</option><option>Reclamação</option><option>Outro</option></select></div>
+        <div class="full"><label>O que aconteceu?</label><textarea id="rp_desc" rows="4" placeholder="Descreva com detalhes o que aconteceu..."></textarea></div>
+      </div>
+      <div class="modal-actions"><button class="b-ghost" onclick="CRUD.close()">Cancelar</button><button class="b" onclick="CRUD._enviarReport('${locId}')">Enviar</button></div>`);}
+  function _enviarReport(locId){const dd=document.getElementById("rp_desc").value.trim();if(!dd){toast("Descreva o que aconteceu.");return;}
+    const data=document.getElementById("rp_data").value||"2026-07-12",tipo=document.getElementById("rp_tipo").value;const l=byId(W().locatarios,locId);
+    W().ocorrencias=W().ocorrencias||[];W().ocorrencias.push({id:uid("O"),locatarioId:locId,veiculoId:l.veiculoId,data,tipo,descricao:dd,status:"Aberto"});
+    if(VP.notif)VP.notif("report","Novo report de locatário",`${l.nome} — ${tipo}: ${dd.slice(0,60)}`);persist("ocorrencias","create",{});
+    modal(`<div style="text-align:center;padding:16px 6px">
+      <div style="font-size:2.8rem;margin-bottom:6px">✅</div>
+      <h3 style="margin-bottom:8px">Report enviado!</h3>
+      <p style="color:var(--sec);font-size:.92rem;max-width:360px;margin:0 auto 4px">Recebemos, ${l.nome.split(" ")[0]}. A equipe da VP CAR foi notificada e vai te retornar em breve pelo WhatsApp. Você acompanha o andamento aqui no seu portal.</p>
+      <div class="modal-actions" style="justify-content:center"><button class="b" onclick="CRUD.close()">Voltar ao meu portal</button></div></div>`);
+    VP.refresh();}
+  function assumirMulta(id){const m=(W().multas||[]).find(x=>x.id===id);if(!m)return;m.ciente=true;m.cienteData="2026-07-12";const l=byId(W().locatarios,m.locatarioId);
+    if(VP.notif)VP.notif("ciente","Multa assumida pelo locatário",`${l.nome} assumiu a multa: ${m.i

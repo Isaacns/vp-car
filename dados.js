@@ -31,6 +31,12 @@ const DADOS = {
     { data:"2026-07-10", hora:"19:22", user:"victor",   nome:"Victor Paiva", acao:"logout",   origem:"Web" }
   ],
 
+  // ---- NOTIFICAÇÕES (central de alertas) ----
+  _notificacoes: [
+    { id:"N1", tipo:"report",     titulo:"Novo report de locatário", desc:"Anderson Souza — Barulho na suspensão dianteira (V01)", data:"2026-07-08", hora:"14:12", lida:false },
+    { id:"N2", tipo:"assinatura", titulo:"Contrato assinado",         desc:"Fábio Nogueira assinou o contrato eletronicamente (V08)", data:"2026-07-07", hora:"10:05", lida:true }
+  ],
+
   // ---- FROTA (10 veículos) ----
   veiculos: [
     { id:"V01", placa:"OKT-4A21", modelo:"Chevrolet Onix 1.0", ano:2021, cor:"Branco",  km:78240, valorDiaria:150.00, plano:"Mensal",  statusVeic:"Alugado",    ipvaVenc:"2026-08-15", seguroMensal:210.00, rastreador:"RST-1001", locatarioId:"L01" },
@@ -81,10 +87,4 @@ const DADOS = {
     { id:"D04", veiculoId:"V04", tipo:"Revisão",        categoria:"Preventiva", data:"2026-06-28", valor:520.00,  km:52000, proxKm:62000, fornecedor:"Fiat Concess.",   obs:"Revisão 50 mil km" },
     { id:"D05", veiculoId:"V06", tipo:"Revisão",        categoria:"Corretiva",  data:"2026-07-05", valor:980.00,  km:134000,proxKm:0,     fornecedor:"Oficina do Zé",   obs:"Suspensão + freios" },
     { id:"D06", veiculoId:"V08", tipo:"Seguro",         categoria:"Fixo",       data:"2026-07-01", valor:240.00,  km:0,     proxKm:0,     fornecedor:"Porto Seguro",    obs:"Parcela mensal" },
-    { id:"D07", veiculoId:"V02", tipo:"Troca de Óleo",  categoria:"Preventiva", data:"2026-06-02", valor:175.00,  km:94000, proxKm:104000,fornecedor:"Auto Center BA",  obs:"Óleo + filtro de ar" },
-    { id:"D08", veiculoId:"V09", tipo:"Revisão",        categoria:"Preventiva", data:"2026-06-15", valor:430.00,  km:75000, proxKm:85000, fornecedor:"Renault Serv.",   obs:"Revisão preventiva" }
-  ],
-
-  // ---- MULTAS (infrações com o carro alugado) ----
-  multas: [
-    { id:"M
+    { id:"D07", veiculoId:"V02", tipo:"Troc
