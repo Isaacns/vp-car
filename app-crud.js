@@ -65,17 +65,22 @@
       {k:"obs",t:"text",lab:"Observação",full:1}]},
     usuarios:{titulo:"Usuário",arr:"_users",campos:[
       {k:"foto",t:"foto",lab:"Foto",full:1},
-      {k:"nome",t:"text",lab:"Nome",req:1,full:1},{k:"user",t:"text",lab:"Usuário (login)",req:1},{k:"pass",t:"text",lab:"Senha",req:1},
+      {k:"nome",t:"text",lab:"Nome",req:1,full:1},{k:"user",t:"text",lab:"Usuário (login)",req:1},{k:"pass",t:"password",lab:"Senha",req:1},
       {k:"cor",t:"text",lab:"Cor do avatar (hex)"},
       {k:"perfil",t:"select",lab:"Perfil",op:["admin","operacao","master"]},{k:"roleLabel",t:"text",lab:"Rótulo do cargo"}]}
   };
 
+  function isMoney(c){return /\(R\$\)/.test(c.lab||"");}
+  function isPhone(c){return c.k==="telefone"||/whats|telefone|fone|celular/i.test(c.lab||"");}
   function fieldHtml(c,val){
     if(c.t==="foto"){const cur=val?`<img src="${val}" class="photo-prev" id="prev_${c.k}"/>`:`<div class="photo-prev" id="prev_${c.k}" style="display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:.7rem">sem foto</div>`;
       return`<div class="full"><label>${c.lab}</label><div class="photo-pick">${cur}<input type="file" accept="image/*" onchange="CRUD._pickFoto(event,'${c.k}')" style="flex:1"/></div></div>`;}
     let inp;
     if(c.t==="select")inp=`<select id="f_${c.k}">${c.op.map(o=>`<option ${String(val)===String(o)?"selected":""}>${o}</option>`).join("")}</select>`;
     else if(c.t==="selref"){const o=c.ref();inp=`<select id="f_${c.k}">${c.opcional?'<option value="">—</option>':''}${o.map(x=>`<option value="${x.v}" ${val===x.v?"selected":""}>${x.l}</option>`).join("")}</select>`;}
+    else if(isMoney(c))inp=`<input id="f_${c.k}" type="text" inputmode="numeric" data-mask="brl" value="${VP.numToBRLInput(val)}" ${c.req?"required":""}/>`;
+    else if(isPhone(c))inp=`<input id="f_${c.k}" type="text" inputmode="tel" data-mask="phone" value="${VP.maskPhoneBR(val)}" ${c.req?"required":""}/>`;
+    else if(c.t==="password")inp=`<input id="f_${c.k}" type="password" value="${String(val).replace(/"/g,'&quot;')}" ${c.req?"required":""}/>`;
     else inp=`<input id="f_${c.k}" type="${c.t}" value="${String(val).replace(/"/g,'&quot;')}" ${c.req?"required":""}/>`;
     return`<div class="${c.full?'full':''}"><label>${c.lab}${c.req?' *':''}</label>${inp}</div>`;
   }
@@ -88,7 +93,8 @@
   function save(mod,id){const sc=SCHEMAS[mod];const rec={};
     for(const c of sc.campos){
       if(c.t==="foto"){if(PIC[c.k]!==undefined)rec[c.k]=PIC[c.k];continue;}
-      let val=document.getElementById("f_"+c.k).value;if(c.t==="number")val=parseFloat(val)||0;
+      let val=document.getElementById("f_"+c.k).value;
+      if(isMoney(c))val=VP.brlToNumber(val);else if(isPhone(c))val=val.replace(/\D/g,"");else if(c.t==="number")val=parseFloat(val)||0;
       if(c.k==="ear")val=(val==="true");if(c.req&&(val===""||val==null)){toast("Preencha: "+c.lab);return;}rec[c.k]=val;}
     const arr=W()[sc.arr||mod];
     if(id){const i=arr.findIndex(x=>x.id===id);rec.id=id;arr[i]=Object.assign(arr[i],rec);persist(mod,"update",rec,i);
@@ -314,7 +320,8 @@
     toast("Reserva convertida. Cadastre o locatário para vincular o veículo.");VP.refresh();}
 
   function modal(html){close();const bg=document.createElement("div");bg.className="modal-bg";bg.id="modalBg";
-    bg.innerHTML=`<div class="modal">${html}</div>`;bg.onclick=e=>{if(e.target===bg)close();};document.body.appendChild(bg);}
+    bg.innerHTML=`<div class="modal">${html}</div>`;bg.onclick=e=>{if(e.target===bg)close();};document.body.appendChild(bg);
+    if(VP.installPwToggles)VP.installPwToggles(bg);}
   function close(){const m=document.getElementById("modalBg");if(m)m.remove();}
 
   window.CRUD={open,save,remove,close,report,marcarPago,avisar,bloquear,repassarMulta,reportarForm,_enviarReport,assumirMulta,marcarLidas,contrato,laudo,
