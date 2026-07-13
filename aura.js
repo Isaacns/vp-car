@@ -59,9 +59,9 @@
 
     reduce ? '.vz-cglow,.vz-stars,.vz-star,.vz-orb{animation:none!important}' : '',
 
-    /* conteúdo sempre acima da luz (superset dos apps + VP CAR) */
-    '#login,#lock,#portalLogin,#app,.wrap,#login>.auth-card,#lock>.auth-card,#portalLogin>.auth-card,',
-    '#app>aside,#app>main,header,section,footer{position:relative;z-index:1}'
+    /* conteúdo sempre acima da luz (sem tocar em #login/#lock/#portalLogin,
+       que já são position:fixed com z-index alto e centralizam sozinhos) */
+    '#app,.wrap,#app>aside,#app>main,header,section,footer{position:relative;z-index:1}'
   ].join('');
   document.head.appendChild(css);
 
