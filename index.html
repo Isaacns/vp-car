@@ -134,7 +134,9 @@ th{text-align:left;padding:12px 14px;font-size:.66rem;text-transform:uppercase;l
 td{padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--card-2)}
-th.acoes,td.acoes{text-align:right}
+th.acoes,td.acoes{text-align:right;position:sticky;right:0;background:var(--card);z-index:3;box-shadow:-12px 0 14px -10px rgba(0,0,0,.55)}
+tbody tr:hover td.acoes{background:var(--card-2)}
+[data-theme="light"] td.acoes{box-shadow:-12px 0 14px -10px rgba(20,20,25,.14)}
 .row-actions{display:inline-flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap;align-items:center}
 .tag{display:inline-flex;align-items:center;padding:3px 11px;border-radius:999px;font-size:.7rem;font-weight:600;white-space:nowrap;line-height:1.4}
 .t-ok{background:rgba(79,185,133,.16);color:#6fd3a6}.t-info{background:rgba(125,155,209,.16);color:#a9c0e6}
@@ -765,7 +767,11 @@ function rDocumentos(v){const rows=[];
     ${kpi("Vencendo (30 dias)",venc30.length,"atenção","var(--warn)")}
     ${kpi("Vencidos",vencidos.length,"regularizar já","var(--bad)")}
     ${kpi("Anexos por veículo","📎","CRLV, seguro, laudos","var(--gold)")}</div>
-   <div class="panel" style="margin-bottom:16px"><h3>Central de documentos</h3><div class="ph">Vencimentos de veículos e condutores em um só lugar. Anexe CRLV, seguro e laudos por veículo; edite os prazos no cadastro.</div></div>
+   <div class="panel" style="margin-bottom:16px"><h3>Central de documentos</h3><div class="ph">Vencimentos de veículos e condutores em um só lugar.</div>
+     <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:.8rem;color:var(--sec)">
+       <span><b style="color:var(--gold)">📎 Arquivos</b> — anexar/ver os documentos do veículo (CRLV, seguro, laudo)</span>
+       <span><b style="color:#4fd6a2">WhatsApp</b> — avisar o condutor que a CNH está vencendo</span>
+     </div></div>
    <div class="tbl-wrap"><table><thead><tr><th>Documento</th><th>Item</th><th>Vencimento</th><th>Status</th><th class="acoes">Ações</th></tr></thead><tbody>
    ${rows.map(r=>{const d=daysTo(r.venc);const st=d<0?'<span class="tag t-bad">vencido</span>':d<=30?`<span class="tag t-warn">${d}d</span>`:'<span class="tag t-ok">vigente</span>';
      const act=r.kind==="veic"?`<button class="b-sm" onclick="CRUD.docsVeiculo('${r.ref.id}')">📎 Arquivos</button><button class="b-sm" onclick="CRUD.open('veiculos','${r.ref.id}')">Editar</button>`:`${waBtn(r.ref.telefone,`Olá ${r.ref.nome.split(" ")[0]}, VP CAR: sua CNH vence em ${fmtDate(r.venc)}. Renove para seguir rodando. 🚗`)}<button class="b-sm" onclick="CRUD.open('locatarios','${r.ref.id}')">Editar</button>`;
