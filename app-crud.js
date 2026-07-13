@@ -160,4 +160,164 @@
       <div class="modal-actions" style="justify-content:center"><button class="b" onclick="CRUD.close()">Voltar ao meu portal</button></div></div>`);
     VP.refresh();}
   function assumirMulta(id){const m=(W().multas||[]).find(x=>x.id===id);if(!m)return;m.ciente=true;m.cienteData="2026-07-12";const l=byId(W().locatarios,m.locatarioId);
-    if(VP.notif)VP.notif("ciente","Multa assumida pelo locatário",`${l.nome} assumiu a multa: ${m.i
+    if(VP.notif)VP.notif("ciente","Multa assumida pelo locatário",`${l.nome} assumiu a multa: ${m.infracao} (${fmtBRL(m.valor)})`);persist("multas","update",m);
+    toast("Você assumiu a multa. Obrigado!");VP.refresh();}
+  function marcarLidas(){(W()._notificacoes||[]).forEach(n=>n.lida=true);toast("Notificações marcadas como lidas.");VP.refresh();}
+
+  /* ---- Vistorias: galeria de fotos ---- */
+  function fotos(id){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;vs.fotosArr=vs.fotosArr||[];renderGaleria(vs);}
+  function renderGaleria(vs){
+    const cells=(vs.fotosArr||[]).map((src,i)=>`<div class="cell"><img src="${src}" onclick="CRUD._lightbox('${vs.id}',${i})"/>
+      <div class="ov"><a href="${src}" download="vistoria-${vs.id}-${i+1}.jpg" title="Baixar">⬇</a>
+      <button title="Apagar" onclick="CRUD._delFoto('${vs.id}',${i})">✕</button></div></div>`).join("");
+    modal(`<h3>Fotos da vistoria — ${vNome(vs.veiculoId)}</h3>
+      <div style="color:var(--mut);font-size:.82rem;margin-bottom:12px">${vs.tipo} · ${fmtDate(vs.data)} · ${(vs.fotosArr||[]).length} foto(s)</div>
+      <div class="gal" id="galBox">${cells||'<div class="empty" style="grid-column:1/-1">Nenhuma foto ainda. Envie abaixo.</div>'}</div>
+      <div class="modal-actions" style="justify-content:space-between">
+        <label class="b-ghost" style="cursor:pointer">➕ Enviar fotos<input type="file" accept="image/*" multiple style="display:none" onchange="CRUD._addFotos('${vs.id}',event)"/></label>
+        <button class="b" onclick="CRUD.close()">Concluir</button></div>`);}
+  function _addFotos(id,e){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;vs.fotosArr=vs.fotosArr||[];
+    const files=[...e.target.files];let pend=files.length;if(!pend)return;
+    files.forEach(f=>{const r=new FileReader();r.onload=()=>{vs.fotosArr.push(r.result);vs.fotos=vs.fotosArr.length;if(--pend===0){renderGaleria(vs);toast(files.length+" foto(s) adicionada(s).");}};r.readAsDataURL(f);});}
+  function _delFoto(id,i){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;if(!confirm("Apagar esta foto?"))return;vs.fotosArr.splice(i,1);vs.fotos=vs.fotosArr.length;renderGaleria(vs);}
+  function _lightbox(id,i){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;const src=vs.fotosArr[i];
+    const lb=document.createElement("div");lb.className="lightbox";lb.innerHTML=`<img src="${src}"/>`;lb.onclick=()=>lb.remove();document.body.appendChild(lb);}
+
+  /* ---- Documentos premium (identidade VP CAR) ---- */
+  function printDoc(titulo,corpo,opt){opt=opt||{};const w=window.open("","_blank");
+    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${titulo} · VP CAR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>@page{margin:0}
+      *{box-sizing:border-box}
+      body{font-family:'Inter',Arial,sans-serif;color:#1A1C1F;margin:0;font-size:12.5px}
+      .page{padding:22mm 18mm 24mm;position:relative;min-height:100vh}
+      .hd{display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #1A1C1F;padding-bottom:14px}
+      .hd img{height:42px}
+      .hd .rt{font-size:10px;color:#8F8F96;text-align:right;letter-spacing:.02em;line-height:1.5}
+      .acc{height:3px;background:linear-gradient(90deg,#C7A96B,#DcC08a 55%,transparent);margin:0 0 22px;border-radius:2px}
+      .doc-t{font-size:9px;letter-spacing:.32em;color:#C7A96B;text-transform:uppercase;margin-top:20px}
+      h1{font-size:22px;font-weight:600;margin:2px 0 6px;color:#0B0B0D;letter-spacing:-.01em}
+      .meta{font-size:11px;color:#8F8F96;margin-bottom:18px}
+      table.parts{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0 18px}
+      table.parts td{padding:9px 12px;border:1px solid #E6E4DE;vertical-align:top}
+      table.parts td.k{background:#F6F3EC;font-weight:600;color:#0B0B0D;width:26%;white-space:nowrap}
+      .cl{margin:0 0 11px;line-height:1.7}
+      .cl b{color:#0B0B0D}
+      .num{color:#C7A96B;font-weight:700}
+      table.grid{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+      table.grid th{background:#0B0B0D;color:#F8F8F8;text-align:left;padding:8px 10px;font-size:10px;letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+      table.grid td{padding:8px 10px;border-bottom:1px solid #ECEAE3}
+      table.grid tr:nth-child(even) td{background:#FAF8F3}
+      .sign{margin-top:54px;display:flex;justify-content:space-between;gap:44px}
+      .sign div{flex:1;text-align:center;border-top:1px solid #1A1C1F;padding-top:7px;font-size:11px;color:#1A1C1F}
+      .ft{position:fixed;bottom:10mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:9px;color:#B7B6B0;border-top:1px solid #ECEAE3;padding-top:7px}
+      .wm{position:fixed;bottom:34%;left:50%;transform:translateX(-50%) rotate(-20deg);font-size:120px;font-weight:700;color:#C7A96B;opacity:.05;letter-spacing:.1em;pointer-events:none}
+    </style></head><body><div class="page">
+    <div class="hd"><img src="vpcar-preta.png" alt="VP CAR" onerror="this.style.display='none'"/>
+      <div class="rt">MOBILIDADE INTELIGENTE<br>WhatsApp (77) 98113-2845 · vpcar</div></div>
+    <div class="acc"></div>
+    ${opt.wm?'<div class="wm">VP CAR</div>':''}
+    <div class="doc-t">${opt.tag||"Documento"}</div>${corpo}
+    <div class="ft"><span>VP CAR · Mobilidade Inteligente</span><span>Sistema by VIZIO — um produto INPERSON · ${fmtDate("2026-07-12")}</span></div>
+    </div></body></html>`);w.document.close();setTimeout(()=>w.print(),600);}
+
+  function contrato(id){const k=W().contratos.find(x=>x.id===id);if(!k)return;const l=byId(W().locatarios,k.locatarioId),v=byId(W().veiculos,k.veiculoId);
+    printDoc("Contrato de Locação",`
+      <h1>Contrato de Locação de Veículo</h1>
+      <div class="meta">Contrato nº ${k.id} · Plano ${k.plano} · Vigência ${fmtDate(k.inicio)} a ${fmtDate(k.fim)}</div>
+      <table class="parts">
+        <tr><td class="k">Locadora</td><td>VP CAR — Mobilidade Inteligente · Locação de Veículos · WhatsApp (77) 98113-2845</td></tr>
+        <tr><td class="k">Locatário(a)</td><td>${l.nome||'—'} · CPF ${l.cpf||'—'} · CNH ${l.cnh||'—'} (${l.cnhCat||'—'}${l.ear?', EAR':''}) · Tel ${l.telefone||'—'}</td></tr>
+        <tr><td class="k">Veículo</td><td>${v.modelo||'—'} · Placa ${v.placa||'—'} · Ano ${v.ano||'—'} · Cor ${v.cor||'—'} · Rastreador ${v.rastreador||'—'}</td></tr>
+        <tr><td class="k">Valores</td><td>Aluguel <b>${fmtBRL(k.valor)}</b> (${k.plano.toLowerCase()}) · Caução <b>${fmtBRL(k.caucao||0)}</b> (${k.caucaoStatus||'—'})</td></tr>
+      </table>
+      <p class="cl"><span class="num">1.</span> <b>Objeto.</b> A LOCADORA cede em locação ao LOCATÁRIO o veículo descrito, destinado ao transporte remunerado de passageiros por aplicativo (Uber, 99 e similares), exigindo-se CNH com observação EAR.</p>
+      <p class="cl"><span class="num">2.</span> <b>Pagamento e bloqueio.</b> O aluguel de ${fmtBRL(k.valor)} é devido em periodicidade ${k.plano.toLowerCase()}. O não pagamento na data autoriza a LOCADORA a bloquear o veículo via rastreamento satelital, após aviso prévio de 24 (vinte e quatro) horas.</p>
+      <p class="cl"><span class="num">3.</span> <b>Caução.</b> O LOCATÁRIO deposita caução de ${fmtBRL(k.caucao||0)}, devolvida ao término do contrato, descontados débitos, avarias e multas pendentes.</p>
+      <p class="cl"><span class="num">4.</span> <b>Multas e infrações.</b> Multas de trânsito no período de posse são de responsabilidade do LOCATÁRIO, incluindo pontuação na CNH e indicação do condutor junto ao órgão competente.</p>
+      <p class="cl"><span class="num">5.</span> <b>Conservação.</b> O veículo é entregue mediante vistoria fotografada, devendo ser devolvido nas mesmas condições, ressalvado o desgaste natural de uso.</p>
+      <p class="cl"><span class="num">6.</span> <b>Rescisão.</b> O descumprimento de qualquer cláusula, em especial a inadimplência, autoriza a rescisão imediata e a retomada do veículo.</p>
+      <div class="sign"><div>${k.assinatura?`<img src="${k.assinatura.img}" style="max-height:44px;display:block;margin:0 auto 2px"/>${l.nome} · <span style="color:#8F8F96">assinado eletronicamente em ${fmtDate(k.assinatura.data)}</span>`:(l.nome||'Locatário(a)')+'<br><span style="color:#8F8F96">Locatário(a)</span>'}</div><div>VP CAR<br><span style="color:#8F8F96">Locadora</span></div></div>`,
+      {tag:"Contrato",wm:true});}
+
+  function laudo(id){const vs=W().vistorias.find(x=>x.id===id);if(!vs)return;const v=byId(W().veiculos,vs.veiculoId);
+    const fotos=(vs.fotosArr&&vs.fotosArr.length)?`<div class="doc-t" style="margin-top:18px">Registro fotográfico</div><table class="grid"><tr>${vs.fotosArr.slice(0,6).map(s=>`<td style="width:33%;padding:4px"><img src="${s}" style="width:100%;border-radius:4px"/></td>`).join("")}</tr></table>`:"";
+    printDoc("Laudo de Vistoria",`
+      <h1>Laudo de Vistoria — ${vs.tipo}</h1>
+      <div class="meta">Vistoria nº ${vs.id} · ${fmtDate(vs.data)} · Responsável: ${vs.responsavel}</div>
+      <table class="parts">
+        <tr><td class="k">Veículo</td><td>${v.modelo} · Placa ${v.placa} · Ano ${v.ano} · Cor ${v.cor}</td></tr>
+        <tr><td class="k">KM</td><td>${(vs.km||0).toLocaleString('pt-BR')} km</td></tr>
+        <tr><td class="k">Combustível</td><td>${vs.combustivel}</td></tr>
+        <tr><td class="k">Avarias</td><td>${vs.avarias||'Sem avarias'}</td></tr>
+      </table>
+      <p class="cl">Declaro que o veículo foi vistoriado na data acima, estando as condições registradas neste laudo e no material fotográfico correspondente. Este documento integra o contrato de locação.</p>
+      ${fotos}
+      <div class="sign"><div>Vistoriador<br><span style="color:#8F8F96">${vs.responsavel}</span></div><div>Locatário(a)<br><span style="color:#8F8F96">Ciente</span></div></div>`,
+      {tag:"Vistoria"});}
+
+  const REP={
+    veiculos:{t:"Frota",cols:["Placa","Modelo","Ano","Diária","Status","IPVA","Seguro/mês"],row:x=>[x.placa,x.modelo,x.ano,fmtBRL(x.valorDiaria),x.statusVeic,fmtDate(x.ipvaVenc),fmtBRL(x.seguroMensal)]},
+    locatarios:{t:"Locatários",cols:["Nome","CPF","App","CNH","Veículo","Plano","Situação"],row:x=>[x.nome,x.cpf,x.app,(x.cnh||'')+(x.ear?' EAR':''),vNome(x.veiculoId),x.plano,x.statusLoc]},
+    cobrancas:{t:"Cobranças",cols:["Locatário","Veículo","Comp.","Vence","Valor","Pagamento","Bloqueio"],row:x=>[lNome(x.locatarioId),vNome(x.veiculoId),x.competencia,fmtDate(x.vencimento),fmtBRL(x.valor),x.statusPag,x.bloqueio]},
+    multas:{t:"Multas",cols:["Veículo","Locatário","Infração","Data","Valor","Pts","Status"],row:x=>[vNome(x.veiculoId),lNome(x.locatarioId),x.infracao,fmtDate(x.data),fmtBRL(x.valor),x.pontos,x.status]},
+    despesas:{t:"Manutenção & Despesas",cols:["Veículo","Tipo","Categoria","Data","Valor","Fornecedor"],row:x=>[vNome(x.veiculoId),x.tipo,x.categoria||'—',fmtDate(x.data),fmtBRL(x.valor),x.fornecedor]},
+    contratos:{t:"Contratos",cols:["#","Locatário","Veículo","Plano","Valor","Caução","Status"],row:x=>[x.id,lNome(x.locatarioId),vNome(x.veiculoId),x.plano,fmtBRL(x.valor),fmtBRL(x.caucao||0),x.statusContrato]},
+    vistorias:{t:"Vistorias",cols:["Veículo","Tipo","Data","KM","Combustível","Fotos"],row:x=>[vNome(x.veiculoId),x.tipo,fmtDate(x.data),(x.km||0).toLocaleString('pt-BR'),x.combustivel,(x.fotosArr&&x.fotosArr.length)||x.fotos||0]}
+  };
+  function report(mod){const r=REP[mod];if(!r)return;const rows=W()[mod].map(x=>`<tr>${r.row(x).map(c=>`<td>${c}</td>`).join("")}</tr>`).join("");
+    printDoc(r.t,`<h1>Relatório — ${r.t}</h1><div class="meta">${W()[mod].length} registro(s)</div><table class="grid"><thead><tr>${r.cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`,{tag:"Relatório"});}
+
+  /* ---- Central de Documentos (anexos por veículo) ---- */
+  function docsVeiculo(id){const vc=W().veiculos.find(x=>x.id===id);if(!vc)return;vc.docs=vc.docs||[];renderDocs(vc);}
+  function renderDocs(vc){const cells=(vc.docs||[]).map((d,i)=>`<div class="cell"><img src="${d}" onclick="CRUD._docLightbox('${vc.id}',${i})"/>
+    <div class="ov"><a href="${d}" download="doc-${vc.placa}-${i+1}.jpg" title="Baixar">⬇</a><button title="Apagar" onclick="CRUD._delDoc('${vc.id}',${i})">✕</button></div></div>`).join("");
+    modal(`<h3>Documentos — ${vc.placa} · ${vc.modelo}</h3>
+      <div style="color:var(--mut);font-size:.82rem;margin-bottom:12px">CRLV, seguro, laudos e afins. ${(vc.docs||[]).length} arquivo(s).</div>
+      <div class="gal">${cells||'<div class="empty" style="grid-column:1/-1">Nenhum documento anexado. Envie abaixo.</div>'}</div>
+      <div class="modal-actions" style="justify-content:space-between"><label class="b-ghost" style="cursor:pointer">➕ Anexar<input type="file" accept="image/*" multiple style="display:none" onchange="CRUD._addDocs('${vc.id}',event)"/></label><button class="b" onclick="CRUD.close()">Concluir</button></div>`);}
+  function _addDocs(id,e){const vc=W().veiculos.find(x=>x.id===id);if(!vc)return;vc.docs=vc.docs||[];const files=[...e.target.files];let pend=files.length;if(!pend)return;
+    files.forEach(f=>{const r=new FileReader();r.onload=()=>{vc.docs.push(r.result);if(--pend===0){renderDocs(vc);toast(files.length+" arquivo(s) anexado(s).");}};r.readAsDataURL(f);});}
+  function _delDoc(id,i){const vc=W().veiculos.find(x=>x.id===id);if(!vc)return;if(!confirm("Apagar este documento?"))return;vc.docs.splice(i,1);renderDocs(vc);}
+  function _docLightbox(id,i){const vc=W().veiculos.find(x=>x.id===id);if(!vc)return;const lb=document.createElement("div");lb.className="lightbox";lb.innerHTML=`<img src="${vc.docs[i]}"/>`;lb.onclick=()=>lb.remove();document.body.appendChild(lb);}
+
+  /* ---- Assinatura eletrônica do contrato ---- */
+  let SIG=null;
+  function assinarContrato(id){const k=W().contratos.find(x=>x.id===id);if(!k)return;const l=byId(W().locatarios,k.locatarioId);
+    modal(`<h3>Assinatura eletrônica</h3>
+      <div style="color:var(--mut);font-size:.85rem;margin-bottom:10px">Contrato ${k.id} · ${l.nome} · ${vNome(k.veiculoId)}. Assine no quadro abaixo (dedo ou mouse).</div>
+      <canvas id="sigpad" width="520" height="180" style="width:100%;background:#fff;border:1px solid var(--line-2);border-radius:10px;touch-action:none;cursor:crosshair"></canvas>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><button class="b-sm" onclick="CRUD._sigClear()">Limpar</button>
+      <div style="display:flex;gap:9px"><button class="b-ghost" onclick="CRUD.close()">Cancelar</button><button class="b" onclick="CRUD._sigSave('${id}')">Confirmar assinatura</button></div></div>`);
+    setTimeout(_sigInit,60);}
+  function _sigInit(){const c=document.getElementById("sigpad");if(!c)return;const ctx=c.getContext("2d");ctx.lineWidth=2.6;ctx.lineCap="round";ctx.strokeStyle="#0B0B0D";let draw=false,px,py;
+    function pos(e){const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)};}
+    function down(e){draw=true;const p=pos(e);px=p.x;py=p.y;e.preventDefault();}
+    function move(e){if(!draw)return;const p=pos(e);ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(p.x,p.y);ctx.stroke();px=p.x;py=p.y;e.preventDefault();}
+    function up(){draw=false;}
+    c.addEventListener("mousedown",down);c.addEventListener("mousemove",move);window.addEventListener("mouseup",up);
+    c.addEventListener("touchstart",down,{passive:false});c.addEventListener("touchmove",move,{passive:false});c.addEventListener("touchend",up);SIG=c;}
+  function _sigClear(){if(SIG)SIG.getContext("2d").clearRect(0,0,SIG.width,SIG.height);}
+  function _sigSave(id){const k=W().contratos.find(x=>x.id===id);if(!k){close();return;}if(!SIG){close();return;}
+    const l=byId(W().locatarios,k.locatarioId);k.assinatura={nome:l.nome,data:"2026-07-12",img:SIG.toDataURL("image/png")};persist("contratos","update",k);
+    if(VP.notif)VP.notif("assinatura","Contrato assinado",`${l.nome} assinou o contrato ${k.id} eletronicamente`);
+    toast("Contrato assinado eletronicamente. ✓");close();VP.refresh();}
+
+  /* ---- Recorrência PIX + Reservas ---- */
+  function gerarProximas(){const ativos=W().locatarios.filter(l=>l.statusLoc!=="Inativo");let n=0;
+    ativos.forEach(l=>{const cs=W().cobrancas.filter(c=>c.locatarioId===l.id).sort((a,b)=>new Date(b.vencimento)-new Date(a.vencimento));const ult=cs[0];if(!ult)return;
+      const dias=l.plano==="Semanal"?7:l.plano==="Diário"?1:30;const d=new Date(ult.vencimento);d.setDate(d.getDate()+dias);const venc=d.toISOString().slice(0,10);
+      if(cs.some(c=>c.vencimento===venc))return;
+      W().cobrancas.push({id:uid("C"),locatarioId:l.id,veiculoId:l.veiculoId,competencia:"Próx. ciclo",vencimento:venc,valor:l.valorAluguel,statusPag:"Pendente",formaPag:"—",dataPagamento:"",bloqueio:"Não"});n++;});
+    toast(n?`${n} cobrança(s) gerada(s) para o próximo ciclo.`:"Nenhuma nova cobrança a gerar.");VP.refresh();}
+  function converterReserva(id){const r=(W().reservas||[]).find(x=>x.id===id);if(!r)return;r.status="Convertido";persist("reservas","update",r);
+    toast("Reserva convertida. Cadastre o locatário para vincular o veículo.");VP.refresh();}
+
+  function modal(html){close();const bg=document.createElement("div");bg.className="modal-bg";bg.id="modalBg";
+    bg.innerHTML=`<div class="modal">${html}</div>`;bg.onclick=e=>{if(e.target===bg)close();};document.body.appendChild(bg);}
+  function close(){const m=document.getElementById("modalBg");if(m)m.remove();}
+
+  window.CRUD={open,save,remove,close,report,marcarPago,avisar,bloquear,repassarMulta,reportarForm,_enviarReport,assumirMulta,marcarLidas,contrato,laudo,
+    fotos,_addFotos,_delFoto,_lightbox,_pickFoto,meuPerfil,_salvarFoto,trocarSenha,_salvarSenha,copiarLink,enviarLink,
+    gerarProximas,converterReserva,docsVeiculo,_addDocs,_delDoc,_docLightbox,assinarContrato,_sigInit,_sigClear,_sigSave,SCHEMAS};
+})();

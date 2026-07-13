@@ -190,7 +190,20 @@ th.acoes,td.acoes{text-align:right}
   .kpis{grid-template-columns:1fr 1fr;gap:10px}
   .kpi .val{font-size:1.34rem}
 }
+@media(max-width:620px){
+  .modal{padding:20px 16px;border-radius:14px;max-height:92vh}
+  .form-grid{grid-template-columns:1fr}
+  .modal-actions{flex-wrap:wrap}
+  .modal-actions .b,.modal-actions .b-ghost{flex:1;min-width:120px}
+  .panel{padding:15px 15px}
+  .topbar h2{font-size:1.2rem}
+  .tools input,.tools select{flex:1;min-width:0}
+  .portal-hero{padding:16px 16px}
+  .portal-hero h3{font-size:1.2rem}
+}
 @media(max-width:460px){.kpis{grid-template-columns:1fr}}
+main{min-width:0}
+#view{max-width:100%}
 </style>
 </head>
 <body data-theme="dark">
@@ -452,4 +465,325 @@ function rLoc(v){v.innerHTML="";tableView(v,{mod:"locatarios",titleAdd:"Locatár
       const msg=`Olá ${x.nome.split(" ")[0]}, aqui é da VP CAR. `+(inad?`Consta pendência no aluguel do ${vNome(x.veiculoId)}. Pode confirmar o pagamento para evitarmos o bloqueio? 🚗`:`Tudo certo com sua locação? Estamos à disposição.`);
       return`<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:32px;height:32px;font-size:.72rem">${avatarInner(x)}</div><div><b>${x.nome}</b><div style="color:var(--mut);font-size:.72rem">${x.cpf}</div></div></div></td>
       <td><span class="tag t-info">${x.app}</span></td><td>${ear}</td><td>${vNome(x.veiculoId)}</td><td>${x.plano}</td>
-      <td>${fmtBRL(x.valorAluguel)}</td><td>${inad?'<span class="
+      <td>${fmtBRL(x.valorAluguel)}</td><td>${inad?'<span class="tag t-bad">Inadimplente</span>':'<span class="tag t-ok">Ativo</span>'}</td>
+      <td>${scoreBadge(x)}</td><td>${waBtn(x.telefone,msg)}</td>${e?actBtns("locatarios",x.id):""}</tr>`;}).join("");}});}
+
+/* ===================== COBRANÇA & BLOQUEIO ===================== */
+function rCob(v){const a=agg();
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Recebido no ciclo",fmtBRL(a.recebido),"confirmados","var(--ok)")}
+    ${kpi("A receber",fmtBRL(a.aReceber),"em aberto","var(--warn)")}
+    ${kpi("Em atraso",fmtBRL(a.atrasado),a.inad+" inadimplente(s)","var(--bad)")}
+    ${kpi("Bloqueios ativos",a.bloq,"via satélite","var(--block)")}</div><div id="cobtbl"></div>`;
+  tableView(document.getElementById("cobtbl"),{mod:"cobrancas",titleAdd:"Cobrança",
+    filters:`<select id="fPag" onchange="VP.refresh()"><option value="">Todos</option><option>Pago</option><option>Pendente</option><option>Atrasado</option></select>`,
+    cols:["Locatário","Veículo","Competência","Vence","Valor","Pagamento","Bloqueio"],
+    rowsHtml:e=>{const fp=document.getElementById("fPag")?.value||"";
+      const rows=WORK.cobrancas.filter(x=>(!fp||x.statusPag===fp)&&matchQ("cobrancas",`${lNome(x.locatarioId)} ${vNome(x.veiculoId)} ${x.competencia}`));
+      if(!rows.length)return emptyRow(8);
+      return rows.map(x=>{const loc=byId(WORK.locatarios,x.locatarioId),late=x.statusPag==="Atrasado";let act="";
+        if(x.statusPag!=="Pago")act+=`<button class="b-sm" onclick="CRUD.marcarPago('${x.id}')">✓ Pago</button>`;
+        if(late)act+=`<button class="b-block" onclick="CRUD.bloquear('${x.id}')">🛰️ ${x.bloqueio==='Bloqueado'?'Liberar':'Bloquear'}</button>`;
+        else if(x.statusPag!=="Pago")act+=`<button class="b-block" onclick="CRUD.avisar('${x.id}')">🔔 24h</button>`;
+        const bt={"Bloqueado":"t-blk","Agendado":"t-warn","Não":"t-mut"}[x.bloqueio]||"t-mut";
+        return`<tr style="${late?'background:rgba(217,106,95,.05)':''}"><td><b>${lNome(x.locatarioId)}</b></td><td>${vNome(x.veiculoId)}</td>
+        <td>${x.competencia}</td><td style="color:${late?'var(--bad)':'inherit'}">${fmtDate(x.vencimento)}</td><td><b>${fmtBRL(x.valor)}</b></td>
+        <td>${spTag(x.statusPag)}</td><td><span class="tag ${bt}">${x.bloqueio}</span></td>
+        <td class="acoes"><div class="row-actions">${act}${waBtn(loc.telefone,`Olá ${(loc.nome||'').split(' ')[0]}, VP CAR aqui. Seu aluguel (${x.competencia}) ${late?'está em atraso':'vence '+fmtDate(x.vencimento)}: ${fmtBRL(x.valor)}. Envio o PIX?`)}</div></td></tr>`;}).join("");},
+    canAdd:true});
+  // cabeçalho da tabela precisa da coluna Ações
+  const head=document.querySelector("#cobtbl thead tr");if(head&&!head.querySelector(".acoes")){const th=document.createElement("th");th.className="acoes";th.textContent="Ações";head.appendChild(th);}}
+
+/* ===================== MULTAS ===================== */
+function rMultas(v){const M=WORK.multas||[];const tot=M.reduce((s,m)=>s+m.valor,0),pts=M.reduce((s,m)=>s+(m.pontos||0),0);
+  const pend=M.filter(m=>m.status==="Pendente").reduce((s,m)=>s+m.valor,0);
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Multas no período",M.length,"registradas","var(--violet)")}
+    ${kpi("Valor total",fmtBRL(tot),"em infrações","var(--warn)")}
+    ${kpi("Pendentes",fmtBRL(pend),"a repassar/pagar","var(--bad)")}
+    ${kpi("Pontos acumulados",pts,"na frota","var(--gold)")}</div>
+    <div class="panel" style="margin-bottom:18px"><h3>Como funciona o repasse</h3><div class="ph">Multa tomada com o carro alugado é de responsabilidade do locatário — registre, repasse e cobre.</div></div>
+    <div id="mtbl"></div>`;
+  tableView(document.getElementById("mtbl"),{mod:"multas",titleAdd:"Multa",
+    filters:`<select id="fMs" onchange="VP.refresh()"><option value="">Todos status</option><option>Pendente</option><option>Repassada</option><option>Paga</option><option>Recorrida</option></select>`,
+    cols:["Veículo","Locatário","Infração","Data","Valor","Pts","Gravidade","Vence","Status"],
+    rowsHtml:e=>{const fs=document.getElementById("fMs")?.value||"";
+      const rows=M.filter(x=>(!fs||x.status===fs)&&matchQ("multas",`${vNome(x.veiculoId)} ${lNome(x.locatarioId)} ${x.infracao}`));
+      if(!rows.length)return emptyRow(10);
+      const gt={"Leve":"t-info","Média":"t-warn","Grave":"t-blk","Gravíssima":"t-bad"},st={"Pendente":"t-warn","Repassada":"t-info","Paga":"t-ok","Recorrida":"t-vio"};
+      return rows.map(x=>{const loc=byId(WORK.locatarios,x.locatarioId);
+        return`<tr><td>${vNome(x.veiculoId)}</td><td><b>${lNome(x.locatarioId)}</b></td><td>${x.infracao}<div style="color:var(--mut);font-size:.72rem">${x.orgao} · ${x.local}</div></td>
+        <td>${fmtDate(x.data)}</td><td><b>${fmtBRL(x.valor)}</b></td><td>${x.pontos}</td><td><span class="tag ${gt[x.gravidade]||'t-mut'}">${x.gravidade}</span></td>
+        <td>${fmtDate(x.vencimento)}</td><td><span class="tag ${st[x.status]||'t-mut'}">${x.status}</span></td>
+        ${e?`<td class="acoes"><div class="row-actions"><button class="b-sm" onclick="CRUD.repassarMulta('${x.id}')">Repassar</button>${waBtn(loc.telefone,`Olá ${(loc.nome||'').split(' ')[0]}, VP CAR. Registramos uma multa no ${vNome(x.veiculoId)}: ${x.infracao} (${fmtDate(x.data)}), ${fmtBRL(x.valor)}. Ela é de sua responsabilidade — orientamos o pagamento até ${fmtDate(x.vencimento)}.`)}<button class="b-sm" onclick="CRUD.open('multas','${x.id}')">Editar</button><button class="b-danger" onclick="CRUD.remove('multas','${x.id}')">×</button></div></td>`:""}</tr>`;}).join("");}});}
+
+/* ===================== MANUTENÇÃO ===================== */
+function rManut(v){const D=WORK.despesas;const tot=D.reduce((s,d)=>s+d.valor,0);
+  const porTipo={};D.forEach(d=>porTipo[d.tipo]=(porTipo[d.tipo]||0)+d.valor);
+  const porCat={};D.forEach(d=>porCat[d.categoria||"Outros"]=(porCat[d.categoria||"Outros"]||0)+d.valor);
+  const prox=WORK.veiculos.map(vc=>{const ds=D.filter(d=>d.veiculoId===vc.id&&d.proxKm>0).sort((a,b)=>b.proxKm-a.proxKm)[0];
+    if(!ds)return null;const falta=ds.proxKm-vc.km;return{vc,ds,falta};}).filter(x=>x&&x.falta<=8000).sort((a,b)=>a.falta-b.falta);
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Total lançado",fmtBRL(tot),D.length+" registros","var(--warn)")}
+    ${kpi("Preventiva",fmtBRL(porCat["Preventiva"]||0),"planejada","var(--ok)")}
+    ${kpi("Corretiva",fmtBRL(porCat["Corretiva"]||0),"não planejada","var(--bad)")}
+    ${kpi("Tributos/Fixo",fmtBRL((porCat["Tributo"]||0)+(porCat["Fixo"]||0)),"IPVA + seguro","var(--info)")}</div>
+  <div class="grid2">
+    <div class="panel"><h3>Despesas por tipo</h3><div class="ph">Distribuição do custo</div><div class="chart-wrap"><canvas id="chD"></canvas></div></div>
+    <div class="panel"><h3>Próximas manutenções</h3><div class="ph">Por quilometragem estimada</div>
+      ${prox.length?prox.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)"><div><b>${p.vc.placa}</b> · ${p.ds.tipo}<div style="color:var(--mut);font-size:.74rem">faltam ${fmtNum(Math.max(p.falta,0))} km</div></div><span class="tag ${p.falta<2000?'t-bad':'t-warn'}">${p.falta<2000?'agendar':'monitorar'}</span></div>`).join(""):'<div class="empty">Sem manutenções próximas.</div>'}
+    </div></div><div id="dtbl"></div>`;
+  charts.d=new Chart(chD,{type:"bar",data:{labels:Object.keys(porTipo),datasets:[{data:Object.values(porTipo),backgroundColor:["#7d9bd1","#4FB985","#D9A94C","#C98A3E","#9a8cd0","#C7A96B"],borderRadius:6}]},options:chartOpts(true)});
+  tableView(document.getElementById("dtbl"),{mod:"despesas",titleAdd:"Despesa",
+    filters:`<select id="fTi" onchange="VP.refresh()"><option value="">Todos tipos</option><option>IPVA</option><option>Revisão</option><option>Troca de Óleo</option><option>Troca de Pneus</option><option>Seguro</option><option>Outros</option></select>`,
+    cols:["Veículo","Tipo","Categoria","Data","Valor","KM","Fornecedor"],
+    rowsHtml:e=>{const ft=document.getElementById("fTi")?.value||"";
+      const rows=D.filter(x=>(!ft||x.tipo===ft)&&matchQ("despesas",`${vNome(x.veiculoId)} ${x.tipo} ${x.fornecedor}`));
+      if(!rows.length)return emptyRow(8);const ct={"Preventiva":"t-ok","Corretiva":"t-bad","Tributo":"t-info","Fixo":"t-mut"};
+      return rows.map(x=>`<tr><td>${vNome(x.veiculoId)}</td><td><span class="tag t-info">${x.tipo}</span></td><td><span class="tag ${ct[x.categoria]||'t-mut'}">${x.categoria||'—'}</span></td>
+        <td>${fmtDate(x.data)}</td><td><b>${fmtBRL(x.valor)}</b></td><td>${x.km?fmtNum(x.km):'—'}</td><td>${x.fornecedor}</td>${e?actBtns("despesas",x.id):""}</tr>`).join("");}});}
+
+/* ===================== ALAVANCAGEM ===================== */
+function rAlav(v){const V=WORK.veiculos,L=WORK.locatarios;
+  const ociosos=V.filter(x=>!x.locatarioId&&x.statusVeic==="Disponível");
+  const inadimplentes=L.filter(l=>l.statusLoc==="Inadimplente");
+  const upgrade=L.filter(l=>l.plano!=="Mensal"&&l.statusLoc==="Ativo");
+  const potencialOcioso=ociosos.reduce((s,x)=>s+x.valorDiaria*26,0);
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Carros ociosos",ociosos.length,fmtBRL(potencialOcioso)+"/mês parados","var(--bad)")}
+    ${kpi("A recuperar",inadimplentes.length,"inadimplente(s)","var(--warn)")}
+    ${kpi("Upgrade de plano",upgrade.length,"diário/semanal → mensal","var(--ok)")}
+    ${kpi("Potencial na base",fmtBRL(potencialOcioso+upgrade.reduce((s,l)=>s+(2100-mensalizar(l))*.6,0)),"receita adicional/mês","var(--gold)")}</div>
+  <div class="panel" style="margin-bottom:16px"><h3>🚗 Reativar ociosos</h3><div class="ph">Cada dia parado é R$150–200 não capturados.</div>
+    ${ociosos.length?ociosos.map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><div><b>${x.placa}</b> · ${x.modelo}<div style="color:var(--mut);font-size:.75rem">diária ${fmtBRL(x.valorDiaria)} · ${x.plano}</div></div>${waBtn(WORK._cfg.tel,`Tenho o ${x.modelo} (${x.placa}) disponível para locação na VP CAR — diária ${fmtBRL(x.valorDiaria)}. Interessado em rodar de app?`,"Divulgar")}</div>`).join(""):'<div class="empty">Nenhum carro ocioso. 🎉</div>'}</div>
+  <div class="panel" style="margin-bottom:16px"><h3>💸 Recuperação de receita</h3><div class="ph">Inadimplentes — recupere antes de perder o locatário.</div>
+    ${inadimplentes.length?inadimplentes.map(l=>{const c=WORK.cobrancas.find(x=>x.locatarioId===l.id&&x.statusPag!=="Pago");
+      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><div><b>${l.nome}</b><div style="color:var(--mut);font-size:.75rem">${vNome(l.veiculoId)} · ${c?fmtBRL(c.valor):''}</div></div>${waBtn(l.telefone,`Olá ${l.nome.split(' ')[0]}, VP CAR. Vamos regularizar sua locação? Consigo uma condição especial para você seguir rodando. 🚗`,"Recuperar")}</div>`;}).join(""):'<div class="empty">Sem inadimplentes. ✅</div>'}</div>
+  <div class="panel"><h3>📈 Upgrade de plano</h3><div class="ph">Converter diário/semanal em mensal estabiliza o caixa.</div>
+    ${upgrade.length?upgrade.map(l=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><div><b>${l.nome}</b><div style="color:var(--mut);font-size:.75rem">${l.plano} · ${vNome(l.veiculoId)}</div></div>${waBtn(l.telefone,`Olá ${l.nome.split(' ')[0]}, VP CAR. Você roda bastante! No plano mensal sai mais barato por dia. Quer que eu simule?`,"Ofertar")}</div>`).join(""):'<div class="empty">Todos no mensal.</div>'}</div>`;}
+
+/* ===================== SAÚDE FINANCEIRA ===================== */
+function rFin(v){const rows=WORK.veiculos.map(vc=>{const loc=WORK.locatarios.find(l=>l.veiculoId===vc.id);
+    const receita=loc?mensalizar(loc):0,desp=WORK.despesas.filter(d=>d.veiculoId===vc.id).reduce((s,d)=>s+d.valor,0),
+      multas=(WORK.multas||[]).filter(m=>m.veiculoId===vc.id&&m.status!=="Paga").reduce((s,m)=>s+m.valor,0),
+      custoFixo=vc.seguroMensal||0,margem=receita-custoFixo;
+    return{vc,loc,receita,desp,multas,custoFixo,margem};});
+  const totR=rows.reduce((s,r)=>s+r.receita,0),totC=rows.reduce((s,r)=>s+r.custoFixo,0),totM=totR-totC,
+    totD=rows.reduce((s,r)=>s+r.desp,0),totMul=rows.reduce((s,r)=>s+r.multas,0);
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Receita recorrente/mês",fmtBRL(totR),"contratos","var(--ok)")}
+    ${kpi("Custo fixo/mês",fmtBRL(totC),"seguros","var(--info)")}
+    ${kpi("Margem operacional/mês",fmtBRL(totM),"antes de manutenção","var(--gold)")}
+    ${kpi("Manutenção acum.",fmtBRL(totD),"despesas","var(--warn)")}
+    ${kpi("Multas em aberto",fmtBRL(totMul),"risco a repassar","var(--violet)")}</div>
+  <div class="tbl-wrap"><table><thead><tr><th>Veículo</th><th>Locatário</th><th>Receita/mês</th><th>Seguro</th><th>Margem</th><th>Manut.</th><th>Multas</th><th>Situação</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td><b>${r.vc.placa}</b> · ${r.vc.modelo}</td><td>${r.loc?r.loc.nome:'<span class="tag t-mut">ocioso</span>'}</td>
+    <td>${fmtBRL(r.receita)}</td><td>${fmtBRL(r.custoFixo)}</td><td style="color:${r.margem>0?'var(--ok)':'var(--bad)'}"><b>${fmtBRL(r.margem)}</b></td>
+    <td>${fmtBRL(r.desp)}</td><td>${r.multas?fmtBRL(r.multas):'—'}</td>
+    <td>${r.receita===0?'<span class="tag t-bad">Ocioso</span>':r.margem<0?'<span class="tag t-warn">Atenção</span>':'<span class="tag t-ok">Rentável</span>'}</td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="panel" style="margin-top:16px"><h3>Leitura estratégica</h3><div class="ph">Gerada dos dados atuais</div>
+    <p style="color:var(--sec);font-size:.9rem;line-height:1.7">A frota gera <b>${fmtBRL(totR)}</b> de receita recorrente contra <b>${fmtBRL(totC)}</b> de custo fixo — margem de <b style="color:${totM>0?'var(--ok)':'var(--bad)'}">${fmtBRL(totM)}/mês</b>. ${rows.filter(r=>r.receita===0).length?`Há <b style="color:var(--warn)">${rows.filter(r=>r.receita===0).length} veículo(s) ocioso(s)</b> — vá ao módulo Alavancagem para reativar.`:'Toda a frota está locada. ✅'} Multas em aberto (${fmtBRL(totMul)}) devem ser repassadas aos locatários.</p></div>`;}
+
+/* ===================== CONTRATOS ===================== */
+function rContr(v){v.innerHTML="";tableView(v,{mod:"contratos",titleAdd:"Contrato",
+  cols:["#","Locatário","Veículo","Plano","Valor","Caução","Vigência","Status"],
+  rowsHtml:e=>{const rows=WORK.contratos.filter(x=>matchQ("contratos",`${lNome(x.locatarioId)} ${vNome(x.veiculoId)}`));
+    if(!rows.length)return emptyRow(9);
+    return rows.map(x=>`<tr><td>${x.id}</td><td><b>${lNome(x.locatarioId)}</b></td><td>${vNome(x.veiculoId)}</td><td>${x.plano}</td>
+      <td>${fmtBRL(x.valor)}</td><td>${fmtBRL(x.caucao||0)}<div style="color:var(--mut);font-size:.72rem">${x.caucaoStatus||''}</div></td>
+      <td>${fmtDate(x.inicio)} → ${fmtDate(x.fim)}</td><td><span class="tag ${x.statusContrato==='Ativo'?'t-ok':'t-warn'}">${x.statusContrato}</span></td>
+      <td class="acoes"><div class="row-actions"><button class="b-sm" onclick="CRUD.contrato('${x.id}')">📄 Gerar</button>${e?`<button class="b-sm" onclick="CRUD.open('contratos','${x.id}')">Editar</button>`:''}</div></td></tr>`).join("");}});
+  const head=document.querySelector("#view thead tr");if(head&&!head.querySelector(".acoes")){const th=document.createElement("th");th.className="acoes";th.textContent="Ações";head.appendChild(th);}}
+
+/* ===================== VISTORIAS ===================== */
+function rVist(v){v.innerHTML="";tableView(v,{mod:"vistorias",titleAdd:"Vistoria",
+  cols:["Veículo","Tipo","Data","KM","Combustível","Avarias","Fotos"],
+  rowsHtml:e=>{const rows=WORK.vistorias.filter(x=>matchQ("vistorias",`${vNome(x.veiculoId)} ${x.tipo} ${x.avarias}`));
+    if(!rows.length)return emptyRow(8);
+    return rows.map(x=>{const n=(x.fotosArr&&x.fotosArr.length)||x.fotos||0;
+      return`<tr><td>${vNome(x.veiculoId)}</td><td><span class="tag ${x.tipo==='Entrega'?'t-ok':'t-warn'}">${x.tipo}</span></td><td>${fmtDate(x.data)}</td>
+      <td>${fmtNum(x.km)}</td><td>${x.combustivel}</td><td style="color:var(--mut)">${x.avarias}</td><td>📷 ${n}</td>
+      <td class="acoes"><div class="row-actions"><button class="b-sm" onclick="CRUD.fotos('${x.id}')">🖼️ Fotos</button><button class="b-sm" onclick="CRUD.laudo('${x.id}')">📄 Laudo</button>${e?`<button class="b-sm" onclick="CRUD.open('vistorias','${x.id}')">Editar</button>`:''}</div></td></tr>`;}).join("");}});
+  const head=document.querySelector("#view thead tr");if(head&&!head.querySelector(".acoes")){const th=document.createElement("th");th.className="acoes";th.textContent="Ações";head.appendChild(th);}}
+
+/* ===================== PORTAL (preview admin) ===================== */
+function rPortalPreview(v){
+  v.innerHTML=`<div class="tools"><label style="color:var(--mut);font-size:.8rem;align-self:center">Ver como locatário:</label>
+    <select id="pSel" onchange="VP.refresh()">${WORK.locatarios.map(l=>`<option value="${l.id}">${l.nome}</option>`).join("")}</select>
+    <div style="flex:1"></div>
+    <button class="b-ghost" onclick="CRUD.copiarLink(document.getElementById('pSel').value)">🔗 Copiar link exclusivo</button>
+    <button class="b" onclick="CRUD.enviarLink(document.getElementById('pSel').value)">${WA_SVG} Enviar link ao locatário</button>
+  </div><div id="pcontent"></div>`;
+  portalContent(document.getElementById("pcontent"),document.getElementById("pSel").value);}
+function portalContent(el,locId){const l=byId(WORK.locatarios,locId);const vc=byId(WORK.veiculos,l.veiculoId);
+  const k=WORK.contratos.find(x=>x.locatarioId===locId);const cobs=WORK.cobrancas.filter(x=>x.locatarioId===locId);
+  const mult=(WORK.multas||[]).filter(x=>x.locatarioId===locId);const oc=(WORK.ocorrencias||[]).filter(x=>x.locatarioId===locId);
+  const prox=cobs.filter(c=>c.statusPag!=="Pago").sort((a,b)=>new Date(a.vencimento)-new Date(b.vencimento))[0];
+  el.innerHTML=`
+  <div class="portal-hero"><div style="display:flex;align-items:center;gap:14px"><div class="avatar" style="width:52px;height:52px;font-size:1rem">${avatarInner(l)}</div>
+    <div><div style="color:var(--mut);font-size:.8rem">Bem-vindo,</div><h3>${l.nome.split(" ")[0]}</h3>
+    <div style="color:var(--sec);font-size:.85rem">${vc.modelo} · ${vc.placa} · plano ${l.plano}</div></div></div>
+    ${waBtn(WORK._cfg.tel,`Olá VP CAR, sou ${l.nome} (${vc.placa}) e preciso de atendimento.`,"Falar com a VP CAR")}</div>
+  <div class="kpis">
+    ${kpi("Próximo vencimento",prox?fmtDate(prox.vencimento):"—",prox?fmtBRL(prox.valor)+" · "+prox.competencia:"em dia","var(--warn)")}
+    ${kpi("Situação",l.statusLoc,l.statusLoc==="Ativo"?"tudo certo":"regularize",l.statusLoc==="Ativo"?"var(--ok)":"var(--bad)")}
+    ${kpi("Meu veículo",vc.placa,vc.statusVeic,"var(--info)")}
+    ${kpi("Multas",mult.length,mult.filter(m=>m.status==="Pendente").length+" pendente(s)","var(--violet)")}</div>
+  <div class="grid2">
+    <div class="panel"><h3>Meu contrato</h3><div class="ph">Plano & caução</div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>Plano</span><b>${l.plano} · ${fmtBRL(l.valorAluguel)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>Vigência</span><b>${k?fmtDate(k.inicio)+' → '+fmtDate(k.fim):'—'}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0"><span>Caução</span><b>${k?fmtBRL(k.caucao)+' · '+k.caucaoStatus:'—'}</b></div>
+      ${k?(k.assinatura?`<div style="margin-top:10px;color:var(--ok);font-size:.82rem">✓ Contrato assinado eletronicamente em ${fmtDate(k.assinatura.data)}</div>`:`<button class="b" style="margin-top:12px;width:100%" onclick="CRUD.assinarContrato('${k.id}')">✍️ Assinar contrato</button>`):''}</div>
+    <div class="panel"><h3>Meus pagamentos</h3><div class="ph">Vencimentos e status</div>
+      ${cobs.map(c=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>${c.competencia} · ${fmtDate(c.vencimento)}</span>${spTag(c.statusPag)}</div>`).join("")||'<div class="empty">Sem cobranças.</div>'}</div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Minhas multas</h3><div class="ph">Infrações sob sua responsabilidade</div>
+      ${mult.length?mult.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)"><div>${m.infracao}<div style="color:var(--mut);font-size:.72rem">${fmtDate(m.data)} · ${fmtBRL(m.valor)}</div></div>${m.ciente?'<span class="tag t-ok">ciente ✓</span>':(m.status==='Paga'?'<span class="tag t-ok">Paga</span>':`<button class="b-sm" onclick="CRUD.assumirMulta('${m.id}')">Assumir</button>`)}</div>`).join(""):'<div class="empty">Nenhuma multa. 👏</div>'}</div>
+    <div class="panel"><h3>Reportar / minhas ocorrências</h3><div class="ph">Fale com a VP CAR</div>
+      ${oc.map(o=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><div>${o.descricao}<div style="color:var(--mut);font-size:.72rem">${o.tipo} · ${fmtDate(o.data)}</div></div><span class="tag t-info">${o.status}</span></div>`).join("")}
+      <button class="b" style="margin-top:12px;width:100%" onclick="CRUD.reportarForm('${locId}')">+ Reportar algo</button></div>
+  </div>`;}
+function renderPortalStandalone(){document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");
+  document.getElementById("nav").innerHTML="";document.getElementById("viewTitle").textContent="Meu Portal";
+  document.getElementById("viewSub").textContent="VP CAR · Mobilidade Inteligente";
+  document.getElementById("ucName").textContent=PORTAL.nome;document.getElementById("ucRole").textContent="Locatário";
+  document.getElementById("ucAvatar").innerHTML=avatarInner(PORTAL);document.getElementById("udAvatar").innerHTML=avatarInner(PORTAL);
+  document.getElementById("udName").textContent=PORTAL.nome;document.getElementById("udRole").textContent="Locatário";
+  // esconde ações administrativas do menu
+  document.querySelectorAll(".udrop button").forEach((b,i)=>{if(i<3)b.classList.add("hidden");});
+  portalContent(document.getElementById("view"),PORTAL.id);}
+
+/* ===================== USUÁRIOS & ACESSOS ===================== */
+function rUsuarios(v){const master=SESSION.perfil==="master";
+  v.innerHTML=`<div class="grid2">
+    <div class="panel"><h3>Usuários do sistema</h3><div class="ph">Perfis e último acesso</div>
+      ${(WORK._users||[]).map(u=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)">
+        <div class="avatar" style="width:34px;height:34px;font-size:.76rem;background:${u.cor||'var(--gold)'}">${avatarInner(u)}</div>
+        <div style="flex:1"><b>${u.nome}</b> ${u.master?'<span class="tag t-vio">master</span>':''}<div style="color:var(--mut);font-size:.74rem">@${u.user} · ${u.roleLabel} · último acesso ${u.ultimoAcesso||'—'}</div></div></div>`).join("")}
+      ${master?'<button class="b" style="margin-top:12px" onclick="CRUD.open(\'usuarios\')">+ Novo usuário</button>':''}</div>
+    <div class="panel"><h3>Registro de acessos</h3><div class="ph">${master?'Log completo (visível ao master)':'Seus acessos recentes'}</div>
+      <div style="max-height:360px;overflow-y:auto">
+      ${(WORK._acessos||[]).filter(a=>master||a.user===SESSION.user).map(a=>{const ic={"login":"🟢","logout":"⚪","bloqueio":"🔒"}[a.acao]||"•";
+        return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)"><span>${ic}</span>
+        <div style="flex:1"><b style="font-size:.85rem">${a.nome}</b> <span style="color:var(--mut);font-size:.78rem">${a.acao}</span><div style="color:var(--mut);font-size:.72rem">${fmtDate(a.data)} ${a.hora} · ${a.origem}</div></div></div>`;}).join("")}
+      </div></div></div>`;}
+
+/* ===================== SCORE DO MOTORISTA ===================== */
+function scoreOf(loc){let s=60;
+  const cobs=WORK.cobrancas.filter(c=>c.locatarioId===loc.id);
+  cobs.forEach(c=>{if(c.statusPag==="Pago")s+=8;else if(c.statusPag==="Atrasado")s-=16;});
+  (WORK.multas||[]).filter(m=>m.locatarioId===loc.id).forEach(m=>{s-=5+(m.pontos||0);});
+  const vist=WORK.vistorias.filter(v=>v.veiculoId===loc.veiculoId&&v.avarias&&!/sem avaria/i.test(v.avarias));
+  s-=vist.length*4;
+  const meses=Math.max(0,Math.round((new Date("2026-07-12")-new Date(loc.inicio))/2.63e9));
+  s+=Math.min(meses,12);
+  if(loc.statusLoc==="Inadimplente")s-=20;
+  return Math.max(0,Math.min(100,Math.round(s)));}
+function scoreTier(s){return s>=85?{l:"Ouro",c:"t-gold"}:s>=70?{l:"Prata",c:"t-info"}:s>=50?{l:"Bronze",c:"t-warn"}:{l:"Risco",c:"t-bad"};}
+function scoreBadge(loc){const s=scoreOf(loc),t=scoreTier(s);return`<span class="tag ${t.c}">${s} · ${t.l}</span>`;}
+function rScore(v){const rows=WORK.locatarios.map(l=>{const s=scoreOf(l);return{l,s,t:scoreTier(s)};}).sort((a,b)=>b.s-a.s);
+  const media=Math.round(rows.reduce((a,b)=>a+b.s,0)/(rows.length||1)),ouro=rows.filter(r=>r.s>=85).length,risco=rows.filter(r=>r.s<50).length;
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Score médio da base",media,"confiabilidade geral","var(--gold)")}
+    ${kpi("Motoristas Ouro",ouro,"≥ 85 pontos","var(--gold)")}
+    ${kpi("Em risco",risco,"< 50 — atenção","var(--bad)")}
+    ${kpi("Avaliados",rows.length,"locatários","var(--info)")}</div>
+   <div class="panel" style="margin-bottom:16px"><h3>Como o score é calculado</h3><div class="ph">Pontualidade de pagamento, multas e pontos na CNH, avarias, tempo de casa e situação atual. Use para crédito, valor de caução e renovação de contrato.</div></div>
+   <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Locatário</th><th>Score</th><th>Classe</th><th>Pagamentos</th><th>Multas</th><th>Tempo</th><th>Contato</th></tr></thead><tbody>
+   ${rows.map((r,i)=>{const cobs=WORK.cobrancas.filter(c=>c.locatarioId===r.l.id),pg=cobs.filter(c=>c.statusPag==="Pago").length,at=cobs.filter(c=>c.statusPag==="Atrasado").length,mu=(WORK.multas||[]).filter(m=>m.locatarioId===r.l.id).length,mm=Math.max(0,Math.round((new Date("2026-07-12")-new Date(r.l.inicio))/2.63e9));
+     return`<tr><td>${i+1}</td><td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:30px;height:30px;font-size:.68rem">${avatarInner(r.l)}</div><b>${r.l.nome}</b></div></td>
+     <td><b style="font-size:1.05rem">${r.s}</b></td><td><span class="tag ${r.t.c}">${r.t.l}</span></td>
+     <td>${pg} pago(s)${at?` · <span style="color:var(--bad)">${at} atraso</span>`:''}</td><td>${mu}</td><td>${mm} mês(es)</td>
+     <td>${waBtn(r.l.telefone,`Olá ${r.l.nome.split(" ")[0]}, aqui é da VP CAR.`)}</td></tr>`;}).join("")}
+   </tbody></table></div>`;}
+
+/* ===================== RESERVAS & FILA ===================== */
+function rReservas(v){const R=WORK.reservas||[];
+  const fila=R.filter(x=>x.status==="Fila").length,res=R.filter(x=>x.status==="Reservado").length,conv=R.filter(x=>x.status==="Convertido").length;
+  const disp=WORK.veiculos.filter(x=>x.statusVeic==="Disponível");
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Na fila",fila,"aguardando carro","var(--warn)")}
+    ${kpi("Reservados",res,"com veículo separado","var(--info)")}
+    ${kpi("Convertidos",conv,"viraram locação","var(--ok)")}
+    ${kpi("Carros disponíveis",disp.length,disp.map(d=>d.placa).join(", ")||"nenhum","var(--gold)")}</div><div id="rtbl"></div>`;
+  tableView(document.getElementById("rtbl"),{mod:"reservas",titleAdd:"Reserva",
+    filters:`<select id="fRs" onchange="VP.refresh()"><option value="">Todos</option><option>Fila</option><option>Reservado</option><option>Convertido</option><option>Cancelado</option></select>`,
+    cols:["Nome","Telefone","Veículo desejado","Plano","Data","Status"],
+    rowsHtml:e=>{const fs=document.getElementById("fRs")?.value||"";const rows=R.filter(x=>(!fs||x.status===fs)&&matchQ("reservas",`${x.nome} ${x.veiculoDesejado} ${x.plano}`));
+      if(!rows.length)return emptyRow(7);const st={"Fila":"t-warn","Reservado":"t-info","Convertido":"t-ok","Cancelado":"t-mut"};
+      return rows.map(x=>`<tr><td><b>${x.nome}</b></td><td>${x.telefone}</td><td>${x.veiculoDesejado}</td><td>${x.plano}</td><td>${fmtDate(x.data)}</td><td><span class="tag ${st[x.status]||'t-mut'}">${x.status}</span></td>
+        ${e?`<td class="acoes"><div class="row-actions"><button class="b-sm" onclick="CRUD.converterReserva('${x.id}')">✓ Converter</button>${waBtn(x.telefone,`Olá ${x.nome.split(" ")[0]}! Aqui é da VP CAR. Temos um carro disponível para você. Vamos fechar sua locação? 🚗`)}<button class="b-sm" onclick="CRUD.open('reservas','${x.id}')">Editar</button><button class="b-danger" onclick="CRUD.remove('reservas','${x.id}')">×</button></div></td>`:""}</tr>`).join("");}});}
+
+/* ===================== RECORRÊNCIA PIX ===================== */
+function addDias(iso,n){const d=new Date(iso);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function rRecorrencia(v){const ativos=WORK.locatarios.filter(l=>l.statusLoc!=="Inativo");
+  const prev=ativos.reduce((s,l)=>s+mensalizar(l),0);
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Contratos em recorrência",ativos.length,"ativos","var(--ok)")}
+    ${kpi("Receita recorrente/mês",fmtBRL(prev),"previsto","var(--gold)")}
+    ${kpi("Régua de lembretes","D-3 · D0 · D+1","WhatsApp automático","var(--info)")}</div>
+   <div class="panel" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+     <div><h3>Cobrança recorrente automática (PIX)</h3><div class="ph">Gera a próxima cobrança de cada contrato ativo e dispara lembretes por WhatsApp nos vencimentos — reduz inadimplência de forma estrutural.</div></div>
+     <button class="b" onclick="CRUD.gerarProximas()">🔁 Gerar próximas cobranças</button></div>
+   <div class="tbl-wrap"><table><thead><tr><th>Locatário</th><th>Plano</th><th>Valor</th><th>Última cobrança</th><th>Próx. vencimento</th><th>Lembrete</th></tr></thead><tbody>
+   ${ativos.map(l=>{const cs=WORK.cobrancas.filter(c=>c.locatarioId===l.id).sort((a,b)=>new Date(b.vencimento)-new Date(a.vencimento)),ult=cs[0];
+     const prox=ult?addDias(ult.vencimento,l.plano==="Semanal"?7:l.plano==="Diário"?1:30):null;
+     return`<tr><td><b>${l.nome}</b></td><td>${l.plano}</td><td>${fmtBRL(l.valorAluguel)}</td><td>${ult?fmtDate(ult.vencimento):'—'}</td><td>${prox?fmtDate(prox):'—'}</td>
+     <td>${waBtn(l.telefone,`Olá ${l.nome.split(" ")[0]}! Lembrete VP CAR: seu aluguel (${l.plano.toLowerCase()}) de ${fmtBRL(l.valorAluguel)} vence ${prox?'em '+fmtDate(prox):'em breve'}. PIX: (77) 98113-2845. Obrigado! 🚗`,"Lembrar")}</td></tr>`;}).join("")}
+   </tbody></table></div>`;}
+
+/* ===================== ALERTAS / NOTIFICAÇÕES ===================== */
+function rAlertas(v){const N=WORK._notificacoes||[];const naoLidas=N.filter(n=>!n.lida).length;
+  const venc=WORK.veiculos.map(x=>({x,d:daysTo(x.ipvaVenc)})).filter(o=>o.d!==null&&o.d<=30);
+  const atr=WORK.cobrancas.filter(c=>c.statusPag==="Atrasado");
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Notificações",N.length,naoLidas+" não lida(s)","var(--gold)")}
+    ${kpi("Reports abertos",(WORK.ocorrencias||[]).filter(o=>o.status!=="Resolvido").length,"do portal do locatário","var(--info)")}
+    ${kpi("Contratos assinados",(WORK.contratos||[]).filter(k=>k.assinatura).length,"eletronicamente","var(--ok)")}
+    ${kpi("Multas a assumir",(WORK.multas||[]).filter(m=>!m.ciente&&m.status!=="Paga").length,"aguardando ciência","var(--violet)")}</div>
+  <div class="panel" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3>Central de notificações</h3><div class="ph">Tudo que o locatário faz chega aqui: contratos assinados, reports e ciência de multa.</div></div>${N.length?`<button class="b-sm" onclick="CRUD.marcarLidas()">Marcar todas como lidas</button>`:''}</div>
+    ${N.length?N.map(n=>{const ic={assinatura:"✍️",report:"📣",multa:"🚦",ciente:"✅",pagamento:"💰"}[n.tipo]||"🔔";
+      return`<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)"><span style="font-size:1.1rem">${ic}</span><div style="flex:1"><b style="font-size:.9rem">${n.titulo}</b> ${n.lida?'':'<span class="tag t-gold">novo</span>'}<div style="color:var(--mut);font-size:.8rem">${n.desc} · ${fmtDate(n.data)} ${n.hora}</div></div></div>`;}).join(""):'<div class="empty">Nenhuma notificação.</div>'}</div>
+  <div class="panel"><h3>Alertas operacionais</h3><div class="ph">Derivados dos dados atuais</div>
+    ${atr.map(c=>`<div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><span>🔴</span><div style="flex:1"><b style="font-size:.88rem">Aluguel em atraso</b><div style="color:var(--mut);font-size:.8rem">${lNome(c.locatarioId)} · ${vNome(c.veiculoId)} · ${fmtBRL(c.valor)}</div></div><button class="b-sm" onclick="render('cobranca')">Ver</button></div>`).join("")}
+    ${venc.map(o=>`<div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><span>${o.d<0?'🔴':'🟡'}</span><div style="flex:1"><b style="font-size:.88rem">IPVA a vencer</b><div style="color:var(--mut);font-size:.8rem">${vNome(o.x.id)} · ${o.d<0?'vencido':o.d+'d'} (${fmtDate(o.x.ipvaVenc)})</div></div><button class="b-sm" onclick="render('documentos')">Ver</button></div>`).join("")||(atr.length?'':'<div class="empty">Nenhum alerta operacional.</div>')}
+  </div>`;}
+
+/* ===================== CENTRAL DE DOCUMENTOS ===================== */
+function rDocumentos(v){const rows=[];
+  WORK.veiculos.forEach(vc=>{rows.push({tipo:"IPVA",item:vc.placa+" · "+vc.modelo,venc:vc.ipvaVenc,ref:vc,kind:"veic"});
+    if(vc.crlvVenc)rows.push({tipo:"CRLV/Licenc.",item:vc.placa,venc:vc.crlvVenc,ref:vc,kind:"veic"});
+    if(vc.seguroVenc)rows.push({tipo:"Seguro",item:vc.placa,venc:vc.seguroVenc,ref:vc,kind:"veic"});});
+  WORK.locatarios.forEach(l=>{if(l.cnhVenc)rows.push({tipo:"CNH"+(l.ear?"/EAR":""),item:l.nome,venc:l.cnhVenc,ref:l,kind:"loc"});});
+  const venc30=rows.filter(r=>{const d=daysTo(r.venc);return d!==null&&d>=0&&d<=30;}),vencidos=rows.filter(r=>{const d=daysTo(r.venc);return d!==null&&d<0;});
+  rows.sort((a,b)=>new Date(a.venc)-new Date(b.venc));
+  v.innerHTML=`<div class="kpis">
+    ${kpi("Documentos monitorados",rows.length,"IPVA, CRLV, seguro, CNH","var(--info)")}
+    ${kpi("Vencendo (30 dias)",venc30.length,"atenção","var(--warn)")}
+    ${kpi("Vencidos",vencidos.length,"regularizar já","var(--bad)")}
+    ${kpi("Anexos por veículo","📎","CRLV, seguro, laudos","var(--gold)")}</div>
+   <div class="panel" style="margin-bottom:16px"><h3>Central de documentos</h3><div class="ph">Vencimentos de veículos e condutores em um só lugar. Anexe CRLV, seguro e laudos por veículo; edite os prazos no cadastro.</div></div>
+   <div class="tbl-wrap"><table><thead><tr><th>Documento</th><th>Item</th><th>Vencimento</th><th>Status</th><th class="acoes">Ações</th></tr></thead><tbody>
+   ${rows.map(r=>{const d=daysTo(r.venc);const st=d<0?'<span class="tag t-bad">vencido</span>':d<=30?`<span class="tag t-warn">${d}d</span>`:'<span class="tag t-ok">vigente</span>';
+     const act=r.kind==="veic"?`<button class="b-sm" onclick="CRUD.docsVeiculo('${r.ref.id}')">📎 Arquivos</button><button class="b-sm" onclick="CRUD.open('veiculos','${r.ref.id}')">Editar</button>`:`${waBtn(r.ref.telefone,`Olá ${r.ref.nome.split(" ")[0]}, VP CAR: sua CNH vence em ${fmtDate(r.venc)}. Renove para seguir rodando. 🚗`)}<button class="b-sm" onclick="CRUD.open('locatarios','${r.ref.id}')">Editar</button>`;
+     return`<tr><td>${r.tipo}</td><td><b>${r.item}</b></td><td>${fmtDate(r.venc)}</td><td>${st}</td><td class="acoes"><div class="row-actions">${act}</div></td></tr>`;}).join("")}
+   </tbody></table></div>`;}
+
+/* ===================== Tema + Boot ===================== */
+function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getElementById(id);if(e)e.src="vpcar-branca.png";});
+  document.querySelectorAll("#portalLogin .logo,#lock .logo").forEach(e=>e.src="vpcar-branca.png");}
+(function boot(){document.body.setAttribute("data-theme","dark");setLogos();
+  // acesso por link exclusivo do locatário
+  var q=new URLSearchParams(location.search);var pt=q.get("p")||q.get("portal");
+  if(pt){var loc=(WORK.locatarios||[]).find(function(l){return portalSlug(l)===pt;});
+    if(loc){PORTAL=loc;logAcesso(loc.id,loc.nome,"login","Portal (link)");renderPortalStandalone();return;}}
+  try{const s=sessionStorage.getItem("vpcar_s");if(s){const o=JSON.parse(s);SESSION=(WORK._users||[]).find(u=>u.user===o.u)||null;if(SESSION)startApp();}}catch(e){}
+})();
+</script>
+<script src="app-crud.js"></script>
+<script src="aura.js?v=4"></script>
+</body>
+</html>

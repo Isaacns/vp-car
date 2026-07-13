@@ -87,4 +87,51 @@ const DADOS = {
     { id:"D04", veiculoId:"V04", tipo:"Revisão",        categoria:"Preventiva", data:"2026-06-28", valor:520.00,  km:52000, proxKm:62000, fornecedor:"Fiat Concess.",   obs:"Revisão 50 mil km" },
     { id:"D05", veiculoId:"V06", tipo:"Revisão",        categoria:"Corretiva",  data:"2026-07-05", valor:980.00,  km:134000,proxKm:0,     fornecedor:"Oficina do Zé",   obs:"Suspensão + freios" },
     { id:"D06", veiculoId:"V08", tipo:"Seguro",         categoria:"Fixo",       data:"2026-07-01", valor:240.00,  km:0,     proxKm:0,     fornecedor:"Porto Seguro",    obs:"Parcela mensal" },
-    { id:"D07", veiculoId:"V02", tipo:"Troc
+    { id:"D07", veiculoId:"V02", tipo:"Troca de Óleo",  categoria:"Preventiva", data:"2026-06-02", valor:175.00,  km:94000, proxKm:104000,fornecedor:"Auto Center BA",  obs:"Óleo + filtro de ar" },
+    { id:"D08", veiculoId:"V09", tipo:"Revisão",        categoria:"Preventiva", data:"2026-06-15", valor:430.00,  km:75000, proxKm:85000, fornecedor:"Renault Serv.",   obs:"Revisão preventiva" }
+  ],
+
+  // ---- MULTAS (infrações com o carro alugado) ----
+  multas: [
+    { id:"M01", veiculoId:"V01", locatarioId:"L01", orgao:"DETRAN-BA", infracao:"Velocidade acima da máxima em até 20%", data:"2026-06-20", local:"Av. Paralela, Salvador", valor:130.16, pontos:4, gravidade:"Média",   vencimento:"2026-07-30", status:"Repassada", responsavel:"Locatário" },
+    { id:"M02", veiculoId:"V02", locatarioId:"L02", orgao:"PRF",       infracao:"Estacionar em local proibido",           data:"2026-06-11", local:"BR-324",                valor:88.38,  pontos:3, gravidade:"Leve",    vencimento:"2026-07-18", status:"Pendente",  responsavel:"Locatário" },
+    { id:"M03", veiculoId:"V04", locatarioId:"L04", orgao:"DETRAN-BA", infracao:"Avançar sinal vermelho",                  data:"2026-05-28", local:"Centro, Feira de Santana",valor:293.47, pontos:7, gravidade:"Gravíssima",vencimento:"2026-07-05",status:"Recorrida", responsavel:"Locatário" },
+    { id:"M04", veiculoId:"V08", locatarioId:"L06", orgao:"DETRAN-BA", infracao:"Usar celular ao dirigir",                 data:"2026-06-30", local:"Av. ACM, Salvador",     valor:293.47, pontos:7, gravidade:"Gravíssima",vencimento:"2026-08-08",status:"Paga",      responsavel:"Locatário" }
+  ],
+
+  // ---- VISTORIAS ----
+  vistorias: [
+    { id:"VS1", veiculoId:"V01", data:"2026-05-02", tipo:"Entrega",   km:76800, combustivel:"1/2", avarias:"Risco leve porta traseira D", fotos:8, responsavel:"Victor Paiva" },
+    { id:"VS2", veiculoId:"V04", data:"2026-03-25", tipo:"Entrega",   km:50100, combustivel:"Cheio", avarias:"Sem avarias", fotos:10, responsavel:"Victor Paiva" },
+    { id:"VS3", veiculoId:"V06", data:"2026-07-05", tipo:"Devolução", km:134200,combustivel:"1/4", avarias:"Retrovisor E trincado", fotos:6, responsavel:"Recepção" },
+    { id:"VS4", veiculoId:"V08", data:"2026-02-14", tipo:"Entrega",   km:85300, combustivel:"Cheio", avarias:"Sem avarias", fotos:9, responsavel:"Victor Paiva" }
+  ],
+
+  // ---- CONTRATOS (+ caução) ----
+  contratos: [
+    { id:"K01", locatarioId:"L01", veiculoId:"V01", plano:"Mensal", valor:2100.00, caucao:2100.00, caucaoStatus:"Retida", inicio:"2026-05-02", fim:"2027-05-02", statusContrato:"Ativo",    arquivo:"Contrato-L01.pdf" },
+    { id:"K02", locatarioId:"L02", veiculoId:"V02", plano:"Mensal", valor:2100.00, caucao:2100.00, caucaoStatus:"Retida", inicio:"2026-04-18", fim:"2027-04-18", statusContrato:"Suspenso", arquivo:"Contrato-L02.pdf" },
+    { id:"K03", locatarioId:"L04", veiculoId:"V04", plano:"Mensal", valor:2400.00, caucao:2400.00, caucaoStatus:"Retida", inicio:"2026-03-25", fim:"2027-03-25", statusContrato:"Ativo",    arquivo:"Contrato-L04.pdf" },
+    { id:"K04", locatarioId:"L06", veiculoId:"V08", plano:"Mensal", valor:2500.00, caucao:2500.00, caucaoStatus:"Retida", inicio:"2026-02-14", fim:"2027-02-14", statusContrato:"Ativo",    arquivo:"Contrato-L06.pdf" }
+  ],
+
+  // ---- OCORRÊNCIAS reportadas pelo locatário (portal) ----
+  ocorrencias: [
+    { id:"O01", locatarioId:"L01", veiculoId:"V01", data:"2026-07-08", tipo:"Manutenção", descricao:"Barulho na suspensão dianteira", status:"Em análise" },
+    { id:"O02", locatarioId:"L03", veiculoId:"V03", data:"2026-07-10", tipo:"Dúvida",     descricao:"Posso trocar para plano mensal?", status:"Aberto" }
+  ],
+
+  // ---- RESERVAS & FILA DE ESPERA ----
+  reservas: [
+    { id:"R01", nome:"Marcos Vinícius", telefone:"5577991110010", veiculoDesejado:"Sedan econômico", plano:"Mensal",  data:"2026-07-09", status:"Fila",      obs:"Aguardando devolução de um sedan" },
+    { id:"R02", nome:"Patrícia Gomes",  telefone:"5577991110011", veiculoDesejado:"Hatch (Kwid/Ka)",  plano:"Semanal", data:"2026-07-11", status:"Reservado", obs:"Reservou o Kwid (V05)" },
+    { id:"R03", nome:"Rafael Dias",     telefone:"5577991110012", veiculoDesejado:"Qualquer",         plano:"Diário",  data:"2026-07-12", status:"Fila",      obs:"" }
+  ],
+
+  // Série de receita mensal (gráfico da HOME)
+  receitaMensal: [
+    { mes:"Fev", valor:9800.00 }, { mes:"Mar", valor:11200.00 }, { mes:"Abr", valor:12600.00 },
+    { mes:"Mai", valor:13900.00 }, { mes:"Jun", valor:15100.00 }, { mes:"Jul", valor:16400.00 }
+  ]
+};
+if (typeof module !== "undefined") module.exports = { DADOS };
