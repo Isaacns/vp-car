@@ -84,7 +84,12 @@
     else inp=`<input id="f_${c.k}" type="${c.t}" value="${String(val).replace(/"/g,'&quot;')}" ${c.req?"required":""}/>`;
     return`<div class="${c.full?'full':''}"><label>${c.lab}${c.req?' *':''}</label>${inp}</div>`;
   }
-  function _pickFoto(e,k){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{PIC[k]=r.result;const p=document.getElementById("prev_"+k);if(p){if(p.tagName==="IMG")p.src=r.result;else p.outerHTML=`<img src="${r.result}" class="photo-prev" id="prev_${k}"/>`;}};r.readAsDataURL(f);}
+  function _pickFoto(e,k){const f=e.target.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{const setPic=(out)=>{PIC[k]=out;const p=document.getElementById("prev_"+k);if(p){if(p.tagName==="IMG")p.src=out;else p.outerHTML=`<img src="${out}" class="photo-prev" id="prev_${k}"/>`;}};
+      const img=new Image();
+      img.onload=()=>{try{const max=320;let w=img.width,h=img.height;const sc=Math.min(1,max/Math.max(w,h)||1);w=Math.round(w*sc)||max;h=Math.round(h*sc)||max;const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);setPic(c.toDataURL("image/jpeg",0.82));}catch(err){setPic(r.result);}};
+      img.onerror=()=>setPic(r.result);img.src=r.result;};
+    r.readAsDataURL(f);}
 
   function open(mod,id){const sc=SCHEMAS[mod];if(!sc)return;PIC={};const arr=W()[sc.arr||mod];const rec=id?arr.find(x=>x.id===id):{};
     const fields=sc.campos.map(c=>fieldHtml(c,(rec&&rec[c.k]!=null?rec[c.k]:""))).join("");
