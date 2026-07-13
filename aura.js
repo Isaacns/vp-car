@@ -60,8 +60,11 @@
     reduce ? '.vz-cglow,.vz-stars,.vz-star,.vz-orb{animation:none!important}' : '',
 
     /* conteúdo sempre acima da luz (sem tocar em #login/#lock/#portalLogin,
-       que já são position:fixed com z-index alto e centralizam sozinhos) */
-    '#app,.wrap,#app>aside,#app>main,header,section,footer{position:relative;z-index:1}'
+       que já são position:fixed com z-index alto e centralizam sozinhos).
+       NÃO forçar position na aside: ela usa sticky (desktop) / fixed (drawer mobile)
+       definidos no index.html — aqui só garantimos o empilhamento acima da AURA. */
+    '#app,.wrap,#app>main,header,section,footer{position:relative;z-index:1}',
+    '#app>aside{z-index:45}'
   ].join('');
   document.head.appendChild(css);
 

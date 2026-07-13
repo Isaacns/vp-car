@@ -181,6 +181,10 @@ tbody tr:hover td.acoes{background:var(--card-2)}
 .portal-hero h3{font-size:1.4rem;font-weight:600}
 
 .menu-btn{display:none}
+/* Modo portal do locatário: sem sidebar/menu, conteúdo em largura cheia (web e mobile) */
+#app.portal-mode{grid-template-columns:1fr}
+#app.portal-mode>aside{display:none}
+#app.portal-mode .menu-btn{display:none!important}
 @media(max-width:880px){
   #app{grid-template-columns:1fr}
   aside{position:fixed;z-index:45;left:-262px;width:250px;transition:left .25s}
@@ -332,7 +336,7 @@ function doUnlock(e){e.preventDefault();const p=document.getElementById("lockPas
   if(SESSION&&p===SESSION.pass){document.getElementById("lock").classList.add("hidden");document.getElementById("lockPass").value="";document.getElementById("app").classList.remove("hidden");}
   else document.getElementById("lockErr").textContent="Senha incorreta.";}
 function startApp(){["login","lock","portalLogin"].forEach(id=>document.getElementById(id).classList.add("hidden"));
-  document.getElementById("app").classList.remove("hidden");refreshUserChip();buildNav();render("home");}
+  document.getElementById("app").classList.remove("hidden");document.getElementById("app").classList.remove("portal-mode");refreshUserChip();buildNav();render("home");}
 function refreshUserChip(){if(!SESSION)return;
   document.getElementById("ucName").textContent=SESSION.nome;document.getElementById("ucRole").textContent=SESSION.roleLabel;
   document.getElementById("udName").textContent=SESSION.nome;document.getElementById("udRole").textContent="@"+SESSION.user;
@@ -650,6 +654,7 @@ function portalContent(el,locId){const l=byId(WORK.locatarios,locId);const vc=by
       <button class="b" style="margin-top:12px;width:100%" onclick="CRUD.reportarForm('${locId}')">+ Reportar algo</button></div>
   </div>`;}
 function renderPortalStandalone(){document.getElementById("login").classList.add("hidden");document.getElementById("app").classList.remove("hidden");
+  document.getElementById("app").classList.add("portal-mode");
   document.getElementById("nav").innerHTML="";document.getElementById("viewTitle").textContent="Meu Portal";
   document.getElementById("viewSub").textContent="VP CAR · Mobilidade Inteligente";
   document.getElementById("ucName").textContent=PORTAL.nome;document.getElementById("ucRole").textContent="Locatário";
@@ -791,6 +796,6 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
 })();
 </script>
 <script src="app-crud.js"></script>
-<script src="aura.js?v=5"></script>
+<script src="aura.js?v=6"></script>
 </body>
 </html>
