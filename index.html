@@ -91,6 +91,10 @@ a{color:inherit;text-decoration:none}
 .auth-card{position:relative;z-index:2;width:100%;max-width:410px;background:linear-gradient(180deg,var(--card),var(--graphite));
   border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:38px 32px;text-align:center}
 .auth-card .logo{width:210px;max-width:74%;height:auto;margin:0 auto 22px;display:block}
+/* ICONE DO APP — mesma arte do favicon (<slug>-icon-192.png), presente em toda marca.
+   Forcado a 1:1 e dimensionado por altura: independe da proporcao da arte do cliente. */
+.auth-card .applogo{width:58px;height:58px;border-radius:15px;display:block;margin:0 auto 14px;
+  object-fit:cover;box-shadow:0 8px 22px rgba(0,0,0,.4)}
 .auth-card h1{font-size:1.1rem;font-weight:500;letter-spacing:.34em;color:var(--gold);text-transform:uppercase;margin-bottom:2px}
 .auth-card .sub{color:var(--mut);font-size:.8rem;margin-bottom:24px}
 .field{text-align:left;margin-bottom:13px}
@@ -124,7 +128,9 @@ tr.clickable:hover{background:var(--card-2)}
 aside{background:linear-gradient(180deg,rgba(11,11,13,.72),rgba(11,11,13,.4));border-right:1px solid var(--line);
   padding:22px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;backdrop-filter:blur(6px)}
 [data-theme="light"] aside{background:linear-gradient(180deg,#fff,#f5f5f3)}
-.brand{padding:2px 8px 20px}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px 20px}
+.brand .applogo{width:32px;height:32px;flex:0 0 32px;border-radius:9px;object-fit:cover}
+.brand #sideLogo{width:106px}
 .brand img{width:150px;max-width:100%;height:auto;display:block}
 .nav{display:flex;flex-direction:column;gap:2px}
 .nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:none;
@@ -265,6 +271,7 @@ main{min-width:0}
 
 <div id="login">
   <form class="auth-card" onsubmit="doLogin(event)">
+    <img src="vpcar-icon-192.png" class="applogo breathe" alt="" aria-hidden="true"/>
     <img src="vpcar-branca.png" class="logo breathe" id="loginLogo" alt="VP CAR — Mobilidade Inteligente"/>
     <div class="field"><label>Usuário</label><input id="lgUser" autocomplete="username" placeholder="victor"/></div>
     <div class="field"><label>Senha</label><input id="lgPass" type="password" autocomplete="current-password" placeholder="••••••"/></div>
@@ -277,6 +284,7 @@ main{min-width:0}
 
 <div id="portalLogin" class="hidden">
   <form class="auth-card" onsubmit="doPortalLogin(event)">
+    <img src="vpcar-icon-192.png" class="applogo breathe" alt="" aria-hidden="true"/>
     <img src="vpcar-branca.png" class="logo breathe" alt="VP CAR"/>
     <h1>Portal do Locatário</h1><div class="sub">Acesse com o link que a VP CAR enviou</div>
     <div class="field"><label>Usuário</label><input id="plUser" placeholder="anderson"/></div>
@@ -290,6 +298,7 @@ main{min-width:0}
 
 <div id="lock" class="hidden">
   <form class="auth-card" onsubmit="doUnlock(event)">
+    <img src="vpcar-icon-192.png" class="applogo breathe" alt="" aria-hidden="true"/>
     <img src="vpcar-branca.png" class="logo breathe" alt="VP CAR"/>
     <h1>Sistema bloqueado</h1><div class="sub" id="lockWho">—</div>
     <div class="field"><label>Senha para desbloquear</label><input id="lockPass" type="password" placeholder="••••••"/></div>
@@ -301,7 +310,7 @@ main{min-width:0}
 
 <div id="app" class="hidden">
   <aside id="side">
-    <div class="brand"><img src="vpcar-branca.png" class="breathe-soft" id="sideLogo" alt="VP CAR"/></div>
+    <div class="brand"><img src="vpcar-icon-192.png" class="applogo breathe-soft" alt="" aria-hidden="true"/><img src="vpcar-branca.png" class="breathe-soft" id="sideLogo" alt="VP CAR"/></div>
     <nav class="nav" id="nav"></nav>
   </aside>
   <div id="navBg" class="nav-bg" onclick="closeMenu()"></div>
