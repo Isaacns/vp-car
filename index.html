@@ -893,4 +893,21 @@ function rDocumentos(v){const rows=[];
    ${rows.map(r=>{const d=daysTo(r.venc);const st=d<0?'<span class="tag t-bad">vencido</span>':d<=30?`<span class="tag t-warn">${d}d</span>`:'<span class="tag t-ok">vigente</span>';
      const act=r.kind==="veic"?`<button class="b-sm" onclick="CRUD.docsVeiculo('${r.ref.id}')">📎 Arquivos</button><button class="b-sm" onclick="CRUD.open('veiculos','${r.ref.id}')">Editar</button>`:`${waBtn(r.ref.telefone,`Olá ${r.ref.nome.split(" ")[0]}, VP CAR: sua CNH vence em ${fmtDate(r.venc)}. Renove para seguir rodando. 🚗`)}<button class="b-sm" onclick="CRUD.open('locatarios','${r.ref.id}')">Editar</button>`;
      const goRow=r.kind==="veic"?`CRUD.docsVeiculo('${r.ref.id}')`:`CRUD.open('locatarios','${r.ref.id}')`;
-     return`<tr class="clickable" oncl
+     return`<tr class="clickable" onclick="if(!event.target.closest('button,a'))${goRow}"><td>${r.tipo}</td><td><b>${r.item}</b></td><td>${fmtDate(r.venc)}</td><td>${st}</td><td class="acoes"><div class="row-actions">${act}</div></td></tr>`;}).join("")}
+   </tbody></table></div>`;}
+
+/* ===================== Tema + Boot ===================== */
+function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getElementById(id);if(e)e.src="vpcar-branca.png";});
+  document.querySelectorAll("#portalLogin .logo,#lock .logo").forEach(e=>e.src="vpcar-branca.png");}
+(function boot(){document.body.setAttribute("data-theme","dark");setLogos();
+  installPwToggles(document);rehydrateMedia();
+  // acesso por link exclusivo do locatário
+  var q=new URLSearchParams(location.search);var pt=q.get("p")||q.get("portal");
+  if(pt){var loc=(WORK.locatarios||[]).find(function(l){return portalSlug(l)===pt;});
+    if(loc){PORTAL=loc;logAcesso(loc.id,loc.nome,"login","Portal (link)");renderPortalStandalone();return;}}
+  try{const s=sessionStorage.getItem("vpcar_s");if(s){const o=JSON.parse(s);SESSION=(WORK._users||[]).find(u=>u.user===o.u)||null;if(SESSION)startApp();}}catch(e){}
+})();
+</script>
+<script src="app-crud.js?v=5"></script>
+<script src="aura.js?v=6"></script>
+</body>
