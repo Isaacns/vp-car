@@ -141,17 +141,61 @@
 
   /* ---- Motor de cobrança/bloqueio ---- */
   function marcarPago(id){const c=W().cobrancas.find(x=>x.id===id);if(!c)return;c.statusPag="Pago";c.dataPagamento="2026-07-12";if(c.formaPag==="—")c.formaPag="PIX";
-    if(c.bloqueio!=="Não"){c.bloqueio="Não";const v=byId(W().veiculos,c.veiculoId);if(v.statusVeic==="Bloqueado")v.statusVeic="Alugado";}
-    const l=byId(W().locatarios,c.locatarioId);if(l.id)l.statusLoc="Ativo";persist("cobrancas","update",c);toast("✓ Pagamento confirmado. Veículo liberado.");VP.refresh();}
+    const l=byId(W().locatarios,c.locatarioId);if(l.id)l.statusLoc="Ativo";
+    const estavaBloqueado=c.bloqueio==="Bloqueado";
+    if(c.bloqueio==="Agendado")c.bloqueio="Não";   // o aviso agendado deixa de valer
+    persist("cobrancas","update",c);
+    // o veículo só sai de "Bloqueado" quando a liberação for de fato executada e confirmada
+    toast(estavaBloqueado?"✓ Pagamento confirmado. Use 🛰️ Liberar para registrar a liberação.":"✓ Pagamento confirmado.");
+    VP.refresh();}
   function avisar(id){const c=W().cobrancas.find(x=>x.id===id);if(!c)return;c.bloqueio="Agendado";const l=byId(W().locatarios,c.locatarioId);
     const msg=`⚠️ VP CAR — Aviso de bloqueio. Olá ${(l.nome||"").split(" ")[0]}, o aluguel do ${vNome(c.veiculoId)} (${c.competencia}) vence ${fmtDate(c.vencimento)}: ${fmtBRL(c.valor)}. Sem a confirmação do pagamento, o veículo será BLOQUEADO via satélite em 24h. 🚗`;
     window.open(VP.waLink(l.telefone,msg),"_blank","noopener");toast("Aviso de 24h registrado.");VP.refresh();}
-  function bloquear(id){const c=W().cobrancas.find(x=>x.id===id);if(!c)return;const v=byId(W().veiculos,c.veiculoId);
-    if(c.bloqueio==="Bloqueado"){if(!confirm("Desbloquear o veículo via satélite?"))return;c.bloqueio="Não";v.statusVeic="Alugado";toast("🛰️ Desbloqueio enviado ("+v.rastreador+").");}
-    else{if(!confirm(`Enviar BLOQUEIO via satélite ao ${v.placa} (${v.rastreador})?`))return;c.bloqueio="Bloqueado";v.statusVeic="Bloqueado";
-      const l=byId(W().locatarios,c.locatarioId);if(l.id)l.statusLoc="Inadimplente";
-      window.open(VP.waLink(l.telefone,`🔒 VP CAR — Seu veículo ${vNome(c.veiculoId)} foi BLOQUEADO por falta de pagamento (${c.competencia}, ${fmtBRL(c.valor)}). Regularize via PIX para desbloqueio imediato.`),"_blank","noopener");
-      toast("🛰️ Bloqueio enviado ("+v.rastreador+").");}persist("cobrancas","update",c);VP.refresh();}
+  /* Bloqueio: o sistema DECIDE, AVISA e REGISTRA; o corte é executado no painel do
+     rastreador enquanto a API não estiver integrada (_cfg.rastreadorApi). Sem simulação. */
+  function bloquear(id){const c=W().cobrancas.find(x=>x.id===id);if(!c)return;
+    const v=byId(W().veiculos,c.veiculoId),l=byId(W().locatarios,c.locatarioId);
+    const cfg=W()._cfg||{},painel=cfg.rastreadorPainel||"",rNome=cfg.rastreadorNome||"painel do rastreador";
+    const bloqueado=c.bloqueio==="Bloqueado";
+    const msg=bloqueado
+      ? `✅ VP CAR — Pagamento confirmado. Seu veículo ${vNome(c.veiculoId)} está liberado. Bom trabalho! 🚗`
+      : `🔒 VP CAR — O aluguel do ${vNome(c.veiculoId)} (${c.competencia}, ${fmtBRL(c.valor)}) está em atraso. Conforme contrato, o veículo será bloqueado. Regularize via PIX para liberação imediata.`;
+    modal(`<h3>${bloqueado?'Liberar':'Bloquear'} veículo · ${v.placa}</h3>
+      <div style="color:var(--mut);font-size:.84rem;margin-bottom:10px">${l.nome||'—'} · ${vNome(c.veiculoId)} · rastreador <b>${v.rastreador||'—'}</b></div>
+      <div class="det">
+        ${detRow("Situação atual",`<span class="tag ${bloqueado?'t-blk':'t-warn'}">${c.bloqueio}</span>`)}
+        ${detRow("Competência",c.competencia)}
+        ${detRow("Vencimento",fmtDate(c.vencimento))}
+        ${detRow("Valor",`<b>${fmtBRL(c.valor)}</b>`)}
+        ${c.bloqueioLog?detRow("Último registro",`${c.bloqueioLog.acao} por ${c.bloqueioLog.por} · ${fmtDate(c.bloqueioLog.data)} ${c.bloqueioLog.hora}`):""}
+      </div>
+      <div style="background:rgba(199,169,107,.08);border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-weight:600;font-size:.86rem;margin-bottom:6px">Como funciona</div>
+        <div style="color:var(--sec);font-size:.8rem;line-height:1.7">
+          <b>1.</b> O sistema avisa o locatário e <b>registra a decisão</b> (data, hora e responsável).<br>
+          <b>2.</b> Você executa o ${bloqueado?'religamento':'corte'} no <b>${rNome}</b>.<br>
+          <b>3.</b> Confirme abaixo — o sistema sincroniza o status do veículo e da cobrança.
+        </div>
+        <div style="color:var(--mut);font-size:.73rem;margin-top:8px">Integração automática com o rastreador: prevista (Fase 2). O mesmo botão passará a enviar o comando sozinho.</div>
+      </div>
+      <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
+        <a class="b-ghost" target="_blank" rel="noopener" href="${VP.waLink(l.telefone,msg)}">Avisar por WhatsApp</a>
+        ${painel?`<a class="b-ghost" target="_blank" rel="noopener" href="${painel}">Abrir ${rNome}</a>`:`<button class="b-ghost" disabled style="opacity:.5;cursor:not-allowed" title="Cadastre a URL do painel em _cfg.rastreadorPainel">Painel não configurado</button>`}
+        <button class="b-ghost" onclick="CRUD.close()">Cancelar</button>
+        <button class="b" onclick="CRUD._confirmarBloqueio('${id}',${bloqueado?'false':'true'})">${bloqueado?'Confirmar liberação':'Confirmar bloqueio efetuado'}</button>
+      </div>`);}
+  function _confirmarBloqueio(id,bloquearAgora){const c=W().cobrancas.find(x=>x.id===id);if(!c)return;
+    const v=byId(W().veiculos,c.veiculoId),l=byId(W().locatarios,c.locatarioId);
+    const quem=(VP.session&&VP.session.nome)||"—",hora=new Date().toTimeString().slice(0,5);
+    if(bloquearAgora){c.bloqueio="Bloqueado";v.statusVeic="Bloqueado";if(l.id)l.statusLoc="Inadimplente";
+      c.bloqueioLog={acao:"Bloqueado",por:quem,data:"2026-07-12",hora};
+      if(VP.notif)VP.notif("bloqueio","Veículo bloqueado",`${v.placa} · ${l.nome||''} · registrado por ${quem}`,{mod:"cobranca",id:c.id});
+      toast("Bloqueio registrado e status sincronizado.");}
+    else{c.bloqueio="Não";if(v.statusVeic==="Bloqueado")v.statusVeic="Alugado";
+      c.bloqueioLog={acao:"Liberado",por:quem,data:"2026-07-12",hora};
+      if(VP.notif)VP.notif("bloqueio","Veículo liberado",`${v.placa} · ${l.nome||''} · registrado por ${quem}`,{mod:"cobranca",id:c.id});
+      toast("Liberação registrada e status sincronizado.");}
+    persist("cobrancas","update",c);close();VP.refresh();}
   function repassarMulta(id){const m=(W().multas||[]).find(x=>x.id===id);if(!m)return;m.status="Repassada";persist("multas","update",m);toast("Multa repassada ao locatário.");VP.refresh();}
   function reportarForm(locId){const l=byId(W().locatarios,locId);
     modal(`<h3>Reportar algo à VP CAR</h3>
@@ -358,5 +402,5 @@
   window.CRUD={open,save,remove,close,report,marcarPago,avisar,bloquear,repassarMulta,reportarForm,_enviarReport,assumirMulta,marcarLidas,contrato,laudo,
     fotos,_addFotos,_delFoto,_lightbox,_pickFoto,meuPerfil,_salvarFoto,trocarSenha,_salvarSenha,copiarLink,enviarLink,
     gerarProximas,converterReserva,docsVeiculo,_addDocs,_delDoc,_docLightbox,assinarContrato,_sigInit,_sigClear,_sigSave,
-    verMulta,verVistoria,verComoLocatario,detalhe,detRow,SCHEMAS};
+    verMulta,verVistoria,verComoLocatario,detalhe,detRow,_confirmarBloqueio,SCHEMAS};
 })();

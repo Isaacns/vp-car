@@ -12,7 +12,12 @@ const DADOS = {
     propLabel:"VP CAR · Locação de Veículos",
     slogan:"MOBILIDADE INTELIGENTE",
     tel:"5577981132845", cidade:"Bahia · BR",
-    authUrl:""                         // vazio = login de demonstração (front)
+    authUrl:"",                        // vazio = login de demonstração (front)
+    // Rastreamento: enquanto não há API integrada, o sistema orquestra (decide, avisa,
+    // registra) e o corte é executado no painel do fornecedor. Preencher com o painel do cliente.
+    rastreadorNome:"painel do rastreador",
+    rastreadorPainel:"",               // URL do painel/app do rastreador (ex.: https://painel.fornecedor.com.br)
+    rastreadorApi:false                // true quando a integração real (Fase 2) estiver ativa
   },
 
   // Usuários do sistema (com foto/inicial, perfil e master). No go-live: hash no backend.
