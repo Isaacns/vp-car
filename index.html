@@ -2,7 +2,18 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<script>if(location.protocol==='http:'){location.replace('https://'+location.host+location.pathname+location.search+location.hash);}</script>
+<script>
+/* Força HTTPS em produção — mas nunca no loopback. Sem a exceção de localhost esta
+   guarda torna o desenvolvimento local impossível: qualquer http://localhost é jogado
+   para um https://localhost que não existe, e a página morre em erro de conexão.
+   O ganho de segurança em 127.0.0.1 é zero (o tráfego não sai da máquina). */
+(function(){
+  var local = /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/.test(location.hostname);
+  if(location.protocol === 'http:' && !local){
+    location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>VP CAR · Gestão de Frota — Mobilidade Inteligente</title>
 <meta name="theme-color" content="#0B0B0D"/>
@@ -919,4 +930,81 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
 </script>
 <script src="app-crud.js?v=5"></script>
 <script src="aura.js?v=6"></script>
+<script>
+/* ============================================================================
+   VERSÃO DO APP — bumpar a CADA deploy. É por este número que o push compara.
+   Vale para a base (VP CAR) e para toda instância gerada a partir dela.
+   ============================================================================ */
+var APP_VERSION = '1.1.0';
+
+/* ============================================================================
+   PUSH DE ATUALIZAÇÃO — padrão VIZIO §14 (_PADROES-VIZIO-INPERSON.md)
+   ----------------------------------------------------------------------------
+   Incidente real (Ateliê Manager, 07/2026): a cliente reportou um bug, corrigimos,
+   publicamos — e o erro CONTINUOU aparecendo. O deploy estava certo; ela mantinha a
+   aba aberta e o app nunca perguntava se havia versão nova. Publicar não é entregar:
+   entregue é quando o código novo roda no navegador dela.
+
+   Por que aqui (na BASE) e não na instância: `instancias/viziofrota` é ARTEFATO
+   GERADO — `gerar-instancia.mjs` reescreve a partir desta base + config. Editar o
+   gerado é trabalho que o próximo publicar-*.bat apaga. Aqui, um lugar só, e toda
+   instância nasce com o push — inclusive as de clientes futuros.
+
+   Cores: `var(--gold)`/`var(--gold-d)` já são por instância. Os fallbacks usam os
+   hexes da base de propósito — o gerador os reescreve com o acento do cliente.
+
+   Este app não tem service worker: a detecção é só por APP_VERSION via rede. Se um
+   dia entrar sw.js, somar a rota do 'updatefound' + skipWaiting (ver VIZIO Money).
+
+   Sem guard de document.hidden de propósito: aba em segundo plano é justamente o
+   caso a pegar. Nunca recarrega sozinho: quem decide a hora é o usuário.
+   ============================================================================ */
+(function(){
+  var avisou = false, checando = false;
+
+  function avisarNovaVersao(){
+    if(avisou) return; avisou = true;
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'vzUpdate';
+    b.innerHTML = '✨ Uma versão novinha do sistema está pronta. <b>Atualizar agora</b>';
+    b.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(8px);'
+      + 'z-index:9999;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;'
+      + 'padding:12px 18px;border:none;border-radius:var(--radius,14px);cursor:pointer;'
+      + 'font:inherit;font-family:var(--sans,Inter,system-ui,sans-serif);font-size:.9rem;'
+      + 'color:var(--ink-btn,#0A0F1E);font-weight:600;'
+      + 'background:linear-gradient(135deg,var(--gold,#C7A96B),var(--gold-d,#A8894E));'
+      + 'box-shadow:0 12px 30px -10px rgba(0,0,0,.55);opacity:0;'
+      + 'transition:opacity .35s,transform .35s;max-width:92vw';
+    b.onclick = function(){
+      b.textContent = 'Atualizando…'; b.disabled = true;
+      try{ sessionStorage.clear(); }catch(_){ }
+      location.replace(location.pathname + '?v=' + Date.now() + location.hash);
+    };
+    document.body.appendChild(b);
+    requestAnimationFrame(function(){
+      b.style.opacity = '1'; b.style.transform = 'translateX(-50%) translateY(0)';
+    });
+  }
+
+  function checarVersao(){
+    if(checando || avisou) return; checando = true;
+    var base = location.href.replace(/[#?].*$/, '');
+    fetch(base + '?_v=' + Date.now(), { cache:'no-store' })
+      .then(function(r){ return r.ok ? r.text() : null; })
+      .then(function(t){
+        if(!t) return;
+        var m = t.match(/APP_VERSION\s*=\s*'([^']+)'/);
+        if(m && m[1] && m[1] !== APP_VERSION) avisarNovaVersao();
+      })
+      .catch(function(){ })
+      .then(function(){ checando = false; });
+  }
+
+  setTimeout(checarVersao, 8000);            // 8s após abrir
+  setInterval(checarVersao, 10*60*1000);     // a cada 10 min
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) checarVersao();     // ao voltar o foco
+  });
+})();
+</script>
 </body>
