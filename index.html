@@ -781,7 +781,11 @@ function rUsuarios(v){const master=SESSION.perfil==="master";
     <div class="panel"><h3>Usuários do sistema</h3><div class="ph">Perfis e último acesso</div>
       ${(WORK._users||[]).map(u=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)">
         <div class="avatar" style="width:34px;height:34px;font-size:.76rem;background:${u.cor||'var(--gold)'}">${avatarInner(u)}</div>
-        <div style="flex:1"><b>${u.nome}</b> ${u.master?'<span class="tag t-vio">master</span>':''}<div style="color:var(--mut);font-size:.74rem">@${u.user} · ${u.roleLabel} · último acesso ${u.ultimoAcesso||'—'}</div></div></div>`).join("")}
+        <div style="flex:1"><b>${u.nome}</b> ${u.master?'<span class="tag t-vio">master</span>':''}<div style="color:var(--mut);font-size:.74rem">@${u.user} · ${u.roleLabel} · último acesso ${u.ultimoAcesso||'—'}</div></div>
+        ${master?`<div style="display:flex;gap:6px">
+          <button class="b-sm" title="Editar usuário" onclick="CRUD.open('usuarios','${u.user}')">✎</button>
+          <button class="b-sm" title="Excluir usuário" onclick="CRUD.remove('usuarios','${u.user}')">🗑</button>
+        </div>`:''}</div>`).join("")}
       ${master?'<button class="b" style="margin-top:12px" onclick="CRUD.open(\'usuarios\')">+ Novo usuário</button>':''}</div>
     <div class="panel"><h3>Registro de acessos</h3><div class="ph">${master?'Log completo (visível ao master)':'Seus acessos recentes'}</div>
       <div style="max-height:360px;overflow-y:auto">

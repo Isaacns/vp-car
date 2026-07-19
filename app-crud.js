@@ -63,7 +63,7 @@
       {k:"veiculoDesejado",t:"text",lab:"Veículo desejado"},{k:"plano",t:"select",lab:"Plano",op:["Diário","Semanal","Mensal"]},
       {k:"data",t:"date",lab:"Data"},{k:"status",t:"select",lab:"Status",op:["Fila","Reservado","Convertido","Cancelado"]},
       {k:"obs",t:"text",lab:"Observação",full:1}]},
-    usuarios:{titulo:"Usuário",arr:"_users",campos:[
+    usuarios:{titulo:"Usuário",arr:"_users",chave:"user",campos:[
       {k:"foto",t:"foto",lab:"Foto",full:1},
       {k:"nome",t:"text",lab:"Nome",req:1,full:1},{k:"user",t:"text",lab:"Usuário (login)",req:1},{k:"pass",t:"password",lab:"Senha",req:1},
       {k:"cor",t:"text",lab:"Cor do avatar (hex)"},
@@ -91,7 +91,7 @@
       img.onerror=()=>setPic(r.result);img.src=r.result;};
     r.readAsDataURL(f);}
 
-  function open(mod,id){const sc=SCHEMAS[mod];if(!sc)return;PIC={};const arr=W()[sc.arr||mod];const rec=id?arr.find(x=>x.id===id):{};
+  function open(mod,id){const sc=SCHEMAS[mod];if(!sc)return;PIC={};const arr=W()[sc.arr||mod];const K=sc.chave||"id";const rec=id?arr.find(x=>String(x[K])===String(id)):{};
     const fields=sc.campos.map(c=>fieldHtml(c,(rec&&rec[c.k]!=null?rec[c.k]:""))).join("");
     modal(`<h3>${id?'Editar':'Novo'} ${sc.titulo}</h3><div class="form-grid">${fields}</div>
       <div class="modal-actions"><button class="b-ghost" onclick="CRUD.close()">Cancelar</button><button class="b" onclick="CRUD.save('${mod}','${id||''}')">Salvar</button></div>`);}
@@ -102,14 +102,25 @@
       if(isMoney(c))val=VP.brlToNumber(val);else if(isPhone(c))val=val.replace(/\D/g,"");else if(c.t==="number")val=parseFloat(val)||0;
       if(c.k==="ear")val=(val==="true");if(c.req&&(val===""||val==null)){toast("Preencha: "+c.lab);return;}rec[c.k]=val;}
     const arr=W()[sc.arr||mod];
-    if(id){const i=arr.findIndex(x=>x.id===id);rec.id=id;arr[i]=Object.assign(arr[i],rec);persist(mod,"update",rec,i);
+    const K=sc.chave||"id";
+    if(id){const i=arr.findIndex(x=>String(x[K])===String(id));
+      if(i<0){toast("Registro nao encontrado.");return;}
+      if(K==="id")rec.id=id;
+      if(sc.arr==="_users"&&rec.nome)rec.inicial=VP.initials(rec.nome);
+      arr[i]=Object.assign(arr[i],rec);persist(mod,"update",rec,i);
       if((sc.arr==="_users")&&VP.session&&VP.session.user===arr[i].user){Object.assign(VP.session,arr[i]);VP.refreshUserChip&&VP.refreshUserChip();}
       toast("Atualizado.");}
     else{if(sc.arr!=="_users")rec.id=uid(mod[0].toUpperCase());else{rec.inicial=VP.initials(rec.nome);}arr.push(rec);persist(mod,"create",rec);toast(sc.titulo+" criado.");}
     if(rec.foto&&VP.saveMediaFor){const savedId=rec.id||id;if(sc.arr==="_users")VP.saveMediaFor("users",rec.user,rec.foto);else if(mod==="locatarios")VP.saveMediaFor("locatarios",savedId,rec.foto);}
     if(mod==="cobrancas")sinc(rec);PIC={};close();VP.refresh();}
   function remove(mod,id){if(!confirm("Excluir este registro?"))return;const sc=SCHEMAS[mod];const arr=W()[sc.arr||mod];
-    const i=arr.findIndex(x=>x.id===id);if(i>=0){arr.splice(i,1);persist(mod,"delete",{id},i);toast("Excluído.");VP.refresh();}}
+    const K=sc.chave||"id";
+    if(sc.arr==="_users"){
+      if(VP.session&&VP.session.user===id){toast("Voce nao pode excluir o proprio usuario.");return;}
+      const alvo=arr.find(x=>x.user===id);
+      if(alvo&&alvo.master&&arr.filter(x=>x.master).length<=1){toast("Nao e possivel excluir o unico master.");return;}
+    }
+    const i=arr.findIndex(x=>String(x[K])===String(id));if(i>=0){arr.splice(i,1);persist(mod,"delete",{id},i);toast("Excluído.");VP.refresh();}}
   function sinc(rec){const v=byId(W().veiculos,rec.veiculoId);if(rec.bloqueio==="Bloqueado")v.statusVeic="Bloqueado";
     const l=byId(W().locatarios,rec.locatarioId);if(l.id)l.statusLoc=rec.statusPag==="Atrasado"?"Inadimplente":(rec.statusPag==="Pago"?"Ativo":l.statusLoc);}
 
