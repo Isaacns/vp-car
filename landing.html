@@ -44,31 +44,21 @@ header{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);background:rg
 .hero-cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
 .hero-note{color:var(--mut);font-size:.84rem;margin-top:18px}
 .hero-card{background:linear-gradient(180deg,var(--card),var(--carbon));border:1px solid var(--line-2);border-radius:24px;padding:52px 40px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.55)}
-/* REGRA VIVA — batimento oficial da marca (mesmo ritmo do sistema: 6.4s, dois picos).
-   rgb do acento e' trocado pelo configurador — manter o formato sem espacos. */
+/* RESPIRACAO DA LOGO — padrao VIZIO (mesmo de studio/cadastro/manual).
+   3.4s, ease-in-out, dois keyframes, simetrico. Sem variacao de opacity: a marca
+   respira, nao pisca. Os rgb do acento sao trocados pelo configurador — manter
+   o formato sem espacos. */
 @keyframes breathe{
-  0%   {opacity:.88;transform:scale(1);      filter:drop-shadow(0 0 0 rgba(199,169,107,0))}
-  34%  {opacity:1;  transform:scale(1.028);  filter:drop-shadow(0 0 20px rgba(199,169,107,.5))}
-  58%  {opacity:.93;transform:scale(1.004);  filter:drop-shadow(0 0 8px rgba(199,169,107,.2))}
-  72%  {opacity:1;  transform:scale(1.055);  filter:drop-shadow(0 0 26px rgba(199,169,107,.62))}
-  78%  {opacity:.95;transform:scale(1.006);  filter:drop-shadow(0 0 10px rgba(199,169,107,.24))}
-  85%  {opacity:1;  transform:scale(1.034);  filter:drop-shadow(0 0 18px rgba(199,169,107,.44))}
-  92%  {opacity:.9; transform:scale(1);      filter:drop-shadow(0 0 5px rgba(199,169,107,.12))}
-  100% {opacity:.88;transform:scale(1);      filter:drop-shadow(0 0 0 rgba(199,169,107,0))}
+  0%,100% {transform:scale(1);    filter:drop-shadow(0 4px 12px rgba(199,169,107,.28))}
+  50%     {transform:scale(1.07); filter:drop-shadow(0 6px 18px rgba(220,192,138,.5))}
 }
 @keyframes breathe-soft{
-  0%   {opacity:.90;transform:scale(1);      filter:drop-shadow(0 0 0 rgba(199,169,107,0))}
-  34%  {opacity:1;  transform:scale(1.012);  filter:drop-shadow(0 0 10px rgba(199,169,107,.26))}
-  58%  {opacity:.95;transform:scale(1.002);  filter:drop-shadow(0 0 4px rgba(199,169,107,.11))}
-  72%  {opacity:1;  transform:scale(1.022);  filter:drop-shadow(0 0 13px rgba(199,169,107,.33))}
-  78%  {opacity:.96;transform:scale(1.003);  filter:drop-shadow(0 0 5px rgba(199,169,107,.13))}
-  85%  {opacity:1;  transform:scale(1.014);  filter:drop-shadow(0 0 9px rgba(199,169,107,.23))}
-  92%  {opacity:.92;transform:scale(1);      filter:drop-shadow(0 0 2px rgba(199,169,107,.06))}
-  100% {opacity:.90;transform:scale(1);      filter:drop-shadow(0 0 0 rgba(199,169,107,0))}
+  0%,100% {transform:scale(1);    filter:drop-shadow(0 2px 7px rgba(199,169,107,.2))}
+  50%     {transform:scale(1.03); filter:drop-shadow(0 3px 11px rgba(220,192,138,.34))}
 }
-.hero-card img{width:80%;max-width:340px;animation:breathe 6.4s cubic-bezier(.4,0,.3,1) infinite;transform-origin:center;will-change:transform,opacity,filter}
-.breathe-soft{animation:breathe-soft 6.4s cubic-bezier(.4,0,.3,1) infinite;transform-origin:center;will-change:transform,opacity,filter}
-@media(prefers-reduced-motion:reduce){.hero-card img,.breathe-soft{animation:none;filter:drop-shadow(0 0 10px rgba(199,169,107,.26))}}
+.hero-card img{width:80%;max-width:340px;animation:breathe 3.4s ease-in-out infinite;transform-origin:center}
+.breathe-soft{animation:breathe-soft 3.4s ease-in-out infinite;transform-origin:center}
+@media(prefers-reduced-motion:reduce){.hero-card img,.breathe-soft{animation:none;filter:drop-shadow(0 4px 12px rgba(199,169,107,.28))}}
 
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:46px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .stat{text-align:center}
