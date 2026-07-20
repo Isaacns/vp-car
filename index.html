@@ -930,7 +930,7 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
    VERSÃO DO APP — bumpar a CADA deploy. É por este número que o push compara.
    Vale para a base (VP CAR) e para toda instância gerada a partir dela.
    ============================================================================ */
-var APP_VERSION = '1.1.0';
+window.APP_VERSION = '1.2.0';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
 
 /* ============================================================================
    PUSH DE ATUALIZAÇÃO — padrão VIZIO §14 (_PADROES-VIZIO-INPERSON.md)
@@ -966,8 +966,8 @@ var APP_VERSION = '1.1.0';
       + 'z-index:9999;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;'
       + 'padding:12px 18px;border:none;border-radius:var(--radius,14px);cursor:pointer;'
       + 'font:inherit;font-family:var(--sans,Inter,system-ui,sans-serif);font-size:.9rem;'
-      + 'color:var(--ink-btn,#0A0F1E);font-weight:600;'
-      + 'background:linear-gradient(135deg,var(--gold,#C7A96B),var(--gold-d,#A8894E));'
+      + 'color:var(--ink-btn,#0B0B0D);font-weight:600;'
+      + 'background:linear-gradient(135deg,var(--gold-2,#DcC08a),var(--gold-d,#A8894E));'
       + 'box-shadow:0 12px 30px -10px rgba(0,0,0,.55);opacity:0;'
       + 'transition:opacity .35s,transform .35s;max-width:92vw';
     b.onclick = function(){
@@ -989,7 +989,7 @@ var APP_VERSION = '1.1.0';
       .then(function(t){
         if(!t) return;
         var m = t.match(/APP_VERSION\s*=\s*'([^']+)'/);
-        if(m && m[1] && m[1] !== APP_VERSION) avisarNovaVersao();
+        if(m && m[1] && m[1] !== window.APP_VERSION) avisarNovaVersao();
       })
       .catch(function(){ })
       .then(function(){ checando = false; });
@@ -1003,3 +1003,4 @@ var APP_VERSION = '1.1.0';
 })();
 </script>
 </body>
+</html>
