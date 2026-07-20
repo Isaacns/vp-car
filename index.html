@@ -440,6 +440,7 @@ document.addEventListener("click",()=>document.getElementById("udrop")?.classLis
 const MODULES=[
   {id:"home",ic:"◧",label:"Visão Geral",sub:"Painel consolidado da frota",grp:null,acc:"var(--gold)"},
   {id:"alertas",ic:"🔔",label:"Alertas",sub:"Central de notificações",grp:null,acc:"var(--gold)"},
+  {id:"agenda",ic:"🗓️",label:"Agenda",sub:"Pauta da semana e tarefas da equipe",grp:null,acc:"var(--gold)"},
   {id:"frota",ic:"🚗",label:"Frota",sub:"Veículos, IPVA, seguro e status",grp:"Operação",acc:"var(--info)"},
   {id:"locatarios",ic:"👤",label:"Locatários",sub:"Motoristas de aplicativo",grp:"Operação",acc:"var(--ok)"},
   {id:"cobranca",ic:"⚡",label:"Cobrança & Bloqueio",sub:"Vencimentos e bloqueio via satélite",grp:"Operação",acc:"var(--block)"},
@@ -474,7 +475,7 @@ function render(id){CURRENT=id;const m=MODULES.find(x=>x.id===id)||MODULES[0];
   document.getElementById("side").classList.remove("open");
   Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};
   const v=document.getElementById("view");v.style.setProperty("--acc",m.acc);
-  ({home:rHome,alertas:rAlertas,frota:rFrota,locatarios:rLoc,cobranca:rCob,recorrencia:rRecorrencia,reservas:rReservas,multas:rMultas,manutencao:rManut,alavancagem:rAlav,
+  ({home:rHome,alertas:rAlertas,agenda:(window.rAgenda||rHome),frota:rFrota,locatarios:rLoc,cobranca:rCob,recorrencia:rRecorrencia,reservas:rReservas,multas:rMultas,manutencao:rManut,alavancagem:rAlav,
     financeiro:rFin,score:rScore,contratos:rContr,vistorias:rVist,documentos:rDocumentos,portal:rPortalPreview,usuarios:rUsuarios}[id]||rHome)(v);
   window.scrollTo({top:0,behavior:"smooth"});}
 
@@ -924,13 +925,14 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
 })();
 </script>
 <script src="app-crud.js?v=5"></script>
+<script src="app-agenda.js?v=1"></script>
 <script src="aura.js?v=6"></script>
 <script>
 /* ============================================================================
    VERSÃO DO APP — bumpar a CADA deploy. É por este número que o push compara.
    Vale para a base (VP CAR) e para toda instância gerada a partir dela.
    ============================================================================ */
-window.APP_VERSION = '1.2.0';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
+window.APP_VERSION = '1.3.0';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
 
 /* ============================================================================
    PUSH DE ATUALIZAÇÃO — padrão VIZIO §14 (_PADROES-VIZIO-INPERSON.md)

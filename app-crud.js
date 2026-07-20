@@ -410,7 +410,7 @@
     if(window.portalContent)window.portalContent(document.getElementById("pvw"),id);}
   VP.detalhe=detalhe;VP.detRow=detRow;
 
-  window.CRUD={open,save,remove,close,report,marcarPago,avisar,bloquear,repassarMulta,reportarForm,_enviarReport,assumirMulta,marcarLidas,contrato,laudo,
+  window.CRUD={open,save,remove,close,report,modal,marcarPago,avisar,bloquear,repassarMulta,reportarForm,_enviarReport,assumirMulta,marcarLidas,contrato,laudo,
     fotos,_addFotos,_delFoto,_lightbox,_pickFoto,meuPerfil,_salvarFoto,trocarSenha,_salvarSenha,copiarLink,enviarLink,
     gerarProximas,converterReserva,docsVeiculo,_addDocs,_delDoc,_docLightbox,assinarContrato,_sigInit,_sigClear,_sigSave,
     verMulta,verVistoria,verComoLocatario,detalhe,detRow,_confirmarBloqueio,SCHEMAS};
