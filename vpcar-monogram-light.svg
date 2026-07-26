@@ -1,0 +1,25 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VP CAR">
+  <defs>
+    <linearGradient id="inkp" x1="60" y1="40" x2="180" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1B2530"/>
+      <stop offset="1" stop-color="#0B0E12"/>
+    </linearGradient>
+    <linearGradient id="steel2" x1="120" y1="16" x2="120" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3D7EA6"/>
+      <stop offset="1" stop-color="#2F6E96"/>
+    </linearGradient>
+  </defs>
+  <circle cx="120" cy="120" r="104" stroke="#C3CCD6" stroke-width="1"/>
+  <circle cx="120" cy="120" r="96" stroke="url(#steel2)" stroke-width="1.4" opacity="0.9"/>
+  <line x1="34" y1="120" x2="70" y2="120" stroke="#C3CCD6" stroke-width="1"/>
+  <line x1="170" y1="120" x2="206" y2="120" stroke="#C3CCD6" stroke-width="1"/>
+  <g stroke="url(#inkp)" stroke-width="10" fill="none">
+    <path d="M78 74 L108 156"/>
+    <path d="M138 74 L108 156"/>
+  </g>
+  <g fill="url(#inkp)">
+    <rect x="133" y="74" width="10" height="92" rx="1"/>
+    <path d="M143 74 h20 a26 26 0 0 1 0 52 h-20 v-11 h20 a15 15 0 0 0 0 -30 h-20 z"/>
+  </g>
+  <circle cx="120" cy="120" r="2.4" fill="#2F6E96"/>
+</svg>

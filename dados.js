@@ -36,10 +36,22 @@ const DADOS = {
     { data:"2026-07-10", hora:"19:22", user:"victor",   nome:"Victor Paiva", acao:"logout",   origem:"Web" }
   ],
 
+  // ---- SEMENTE DA AGENDA (§16) ----
+  // Atividades iniciais da pauta, usadas SÓ na primeira carga (quando não há nada
+  // salvo em localStorage). O app-agenda.js (seedEV) realinha cada `dow` para a
+  // semana corrente (0=Segunda ... 6=Domingo), então a agenda nunca nasce vazia
+  // nem com datas velhas. Distribuídas em dias e períodos (Manhã/Tarde/Noite)
+  // para o módulo aparecer bem preenchido na demo. Texto neutro (sem persona).
+  _agendaSeed: [
+    { dow:0, hora:"09:30", status:"pendente",  texto:"Vistoria de entrega — Renault Kwid (SLB-7E88)", veiculoId:"V05", locatarioId:"" },
+    { dow:2, hora:"15:00", status:"andamento", texto:"Revisão programada — VW Voyage (TMC-3F12)",      veiculoId:"V06", locatarioId:"" },
+    { dow:4, hora:"19:00", status:"pendente",  texto:"Renovação de contrato — Anderson Souza",         veiculoId:"V01", locatarioId:"L01" }
+  ],
+
   // ---- NOTIFICAÇÕES (central de alertas) ----
   _notificacoes: [
     { id:"N1", tipo:"report",     titulo:"Novo report de locatário", desc:"Anderson Souza — Barulho na suspensão dianteira (V01)", data:"2026-07-08", hora:"14:12", lida:false },
-    { id:"N2", tipo:"assinatura", titulo:"Contrato assinado",         desc:"Fábio Nogueira assinou o contrato eletronicamente (V08)", data:"2026-07-07", hora:"10:05", lida:true }
+    { id:"N2", tipo:"assinatura", titulo:"Contrato enviado para assinatura", desc:"Fábio Nogueira — contrato enviado, aguardando assinatura eletrônica (V08)", data:"2026-07-07", hora:"10:05", lida:true }
   ],
 
   // ---- FROTA (10 veículos) ----

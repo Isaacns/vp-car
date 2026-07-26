@@ -20,10 +20,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="vpcar-fav-32.png?v=3"/>
 <link rel="apple-touch-icon" href="vpcar-fav-180.png?v=3"/>
 <link rel="manifest" href="manifest.json"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Fonte e Chart.js servidos LOCALMENTE (vendor/) — a demo funciona sem internet.
+     Nada de CDN aqui: no local vem da pasta, no GitHub Pages vem da raiz do domínio. -->
+<link rel="stylesheet" href="vendor/inter.css"/>
+<script src="vendor/chart.umd.min.js"></script>
 <script>window.VZ_ACCENT="#C7A96B";</script>
 <style>
 :root{
@@ -344,7 +344,7 @@ main{min-width:0}
   </main>
 </div>
 
-<script src="dados.js"></script>
+<script src="dados.js?v=2"></script>
 <script>
 /* ===================== Núcleo ===================== */
 let WORK=JSON.parse(JSON.stringify(DADOS));
@@ -925,14 +925,14 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
 })();
 </script>
 <script src="app-crud.js?v=5"></script>
-<script src="app-agenda.js?v=1"></script>
+<script src="app-agenda.js?v=2"></script>
 <script src="aura.js?v=6"></script>
 <script>
 /* ============================================================================
    VERSÃO DO APP — bumpar a CADA deploy. É por este número que o push compara.
    Vale para a base (VP CAR) e para toda instância gerada a partir dela.
    ============================================================================ */
-window.APP_VERSION = '1.3.0';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
+window.APP_VERSION = '1.4.1';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
 
 /* ============================================================================
    PUSH DE ATUALIZAÇÃO — padrão VIZIO §14 (_PADROES-VIZIO-INPERSON.md)

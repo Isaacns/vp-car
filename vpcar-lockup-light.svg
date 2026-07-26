@@ -1,0 +1,27 @@
+<svg width="620" height="200" viewBox="0 0 620 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VP CAR — Movido a confiança">
+  <defs>
+    <linearGradient id="inkp" x1="40" y1="50" x2="150" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1B2530"/><stop offset="1" stop-color="#0B0E12"/>
+    </linearGradient>
+    <linearGradient id="steel2" x1="100" y1="20" x2="100" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3D7EA6"/><stop offset="1" stop-color="#2F6E96"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(0,10)">
+    <circle cx="90" cy="90" r="78" stroke="#C3CCD6" stroke-width="1"/>
+    <circle cx="90" cy="90" r="71.5" stroke="url(#steel2)" stroke-width="1.2" opacity="0.9"/>
+    <line x1="24" y1="90" x2="52" y2="90" stroke="#C3CCD6" stroke-width="1"/>
+    <line x1="128" y1="90" x2="156" y2="90" stroke="#C3CCD6" stroke-width="1"/>
+    <g stroke="url(#inkp)" stroke-width="7.4" fill="none">
+      <path d="M56 56 L79 118"/><path d="M102 56 L79 118"/>
+    </g>
+    <g fill="url(#inkp)">
+      <rect x="98" y="56" width="7.4" height="70" rx="1"/>
+      <path d="M105 56 h15 a19.5 19.5 0 0 1 0 39 h-15 v-8.4 h15 a11 11 0 0 0 0 -22 h-15 z"/>
+    </g>
+    <circle cx="90" cy="90" r="1.8" fill="#2F6E96"/>
+  </g>
+  <text x="196" y="102" font-family="Georgia,'Times New Roman',serif" font-size="58" letter-spacing="7" fill="#141A20" font-weight="400">VP CAR</text>
+  <line x1="198" y1="120" x2="540" y2="120" stroke="#C3CCD6" stroke-width="1"/>
+  <text x="199" y="144" font-family="'Helvetica Neue',Arial,sans-serif" font-size="13.5" letter-spacing="5" fill="#5A6875">MOVIDO A CONFIANÇA</text>
+</svg>

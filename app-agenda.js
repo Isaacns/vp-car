@@ -32,7 +32,29 @@ function W(){return window.VP?VP.WORK:{};}
 function quem(){try{return (VP.session&&(VP.session.nome||VP.session.user))||"Usuário";}catch(e){return "Usuário";}}
 function rd(k,fb){try{var v=JSON.parse(localStorage.getItem(k)||"null");return v==null?fb:v;}catch(e){return fb;}}
 function wr(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-function load(){if(EV===null)EV=rd(K_EV,[]);if(TK===null)TK=rd(K_TK,[]);if(LOG===null)LOG=rd(K_LOG,[]);}
+function load(){
+  if(EV===null){
+    if(localStorage.getItem(K_EV)===null){ EV=seedEV(); saveEV(); }
+    else EV=rd(K_EV,[]);
+  }
+  if(TK===null)TK=rd(K_TK,[]);
+  if(LOG===null)LOG=rd(K_LOG,[]);
+}
+/* SEMENTE da pauta (demo): só na primeira carga (sem nada salvo). As datas vêm
+   de DADOS._agendaSeed (dados.js) com `dow` 0=Seg..6=Dom e são realinhadas para
+   a semana CORRENTE (Segunda + dow) — a agenda nunca nasce vazia nem com datas
+   velhas. É config de DADOS, rebrandeada por instância; sem persona no texto. */
+function seedEV(){
+  var seed=(W()&&W()._agendaSeed)||[];
+  if(!seed.length)return [];
+  var mon=mondayOf(new Date()),out=[];
+  seed.forEach(function(s,i){
+    var d=new Date(mon);d.setDate(mon.getDate()+(+s.dow||0));
+    out.push({id:i+1,data:iso(d),hora:s.hora||"09:00",resp:"",status:s.status||"pendente",
+      texto:s.texto||"",veiculoId:s.veiculoId||"",locatarioId:s.locatarioId||""});
+  });
+  return out;
+}
 function saveEV(){wr(K_EV,EV);} function saveTK(){wr(K_TK,TK);}
 function addLog(acao,alvo,antes){
   LOG.unshift({ts:Date.now(),user:quem(),acao:acao,texto:alvo,antes:antes||""});

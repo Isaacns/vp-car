@@ -1,0 +1,32 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VP CAR">
+  <defs>
+    <linearGradient id="plat" x1="60" y1="40" x2="180" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4F7FA"/>
+      <stop offset="0.5" stop-color="#C4CCD6"/>
+      <stop offset="1" stop-color="#8B96A4"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="120" y1="16" x2="120" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5FA6CF"/>
+      <stop offset="1" stop-color="#2F6E96"/>
+    </linearGradient>
+  </defs>
+  <!-- selo circular: anel hairline duplo -->
+  <circle cx="120" cy="120" r="104" stroke="#3A4552" stroke-width="1"/>
+  <circle cx="120" cy="120" r="96" stroke="url(#steel)" stroke-width="1.4" opacity="0.9"/>
+  <!-- corte de velocidade (linha editorial) -->
+  <line x1="34" y1="120" x2="70" y2="120" stroke="#3A4552" stroke-width="1"/>
+  <line x1="170" y1="120" x2="206" y2="120" stroke="#3A4552" stroke-width="1"/>
+  <!-- monograma VP: V e P compartilhando a haste -->
+  <g stroke="url(#plat)" stroke-width="10" stroke-linecap="butt" fill="none">
+    <!-- V -->
+    <path d="M78 74 L108 156"/>
+    <path d="M138 74 L108 156"/>
+  </g>
+  <!-- P: haste + bojo, apoiada no braço direito do V -->
+  <g fill="url(#plat)">
+    <rect x="133" y="74" width="10" height="92" rx="1"/>
+    <path d="M143 74 h20 a26 26 0 0 1 0 52 h-20 v-11 h20 a15 15 0 0 0 0 -30 h-20 z"/>
+  </g>
+  <!-- micro-acento de luz -->
+  <circle cx="120" cy="120" r="2.4" fill="#5FA6CF"/>
+</svg>
