@@ -382,8 +382,11 @@
     toast("Reserva convertida. Cadastre o locatário para vincular o veículo.");VP.refresh();}
 
   function modal(html,wide){close();const bg=document.createElement("div");bg.className="modal-bg";bg.id="modalBg";
-    bg.innerHTML=`<div class="modal${wide?' wide':''}">${html}</div>`;bg.onclick=e=>{if(e.target===bg)close();};document.body.appendChild(bg);
-    if(VP.installPwToggles)VP.installPwToggles(bg);}
+    bg.innerHTML=`<div class="modal${wide?' wide':''}" role="dialog" aria-modal="true">${html}</div>`;bg.onclick=e=>{if(e.target===bg)close();};document.body.appendChild(bg);
+    if(VP.installPwToggles)VP.installPwToggles(bg);
+    /* Acessibilidade (§6): foca o 1º campo ao abrir; se não houver campo, foca a caixa (Esc fecha via handler global) */
+    setTimeout(function(){var f=bg.querySelector("input:not([type=hidden]),select,textarea");
+      if(f){try{f.focus();}catch(_){}}else{var box=bg.querySelector(".modal");if(box){box.setAttribute("tabindex","-1");try{box.focus();}catch(_){}}}},60);}
   function close(){const m=document.getElementById("modalBg");if(m)m.remove();}
 
   /* ---- Telas de detalhe (somente leitura) ---- */

@@ -48,6 +48,17 @@ const DADOS = {
     { dow:4, hora:"19:00", status:"pendente",  texto:"Renovação de contrato — Anderson Souza",         veiculoId:"V01", locatarioId:"L01" }
   ],
 
+  // ---- SEMENTE DO QUADRO DE TAREFAS (§16.5) ----
+  // Kanban Pendente/Em andamento/Concluída da Agenda. Usadas SÓ na 1ª carga (sem nada
+  // salvo em localStorage). O app-agenda.js (seedTK) monta os stamps de cronometragem
+  // conforme o status, então cada cartão nasce com um tempo plausível. Coerente com a
+  // frota/locatários demo (Bruno inadimplente/V02, V06 em manutenção, V08).
+  _agendaTarefasSeed: [
+    { status:"pendente",  titulo:"Ligar para o locatário inadimplente — Bruno Carvalho (HB20 · V02)", resp:"Recepção" },
+    { status:"andamento", titulo:"Levar o VW Voyage (V06) para a revisão de suspensão",                resp:"Victor Paiva" },
+    { status:"concluida", titulo:"Renovar o seguro do Nissan Versa (V08)",                             resp:"Victor Paiva" }
+  ],
+
   // ---- NOTIFICAÇÕES (central de alertas) ----
   _notificacoes: [
     { id:"N1", tipo:"report",     titulo:"Novo report de locatário", desc:"Anderson Souza — Barulho na suspensão dianteira (V01)", data:"2026-07-08", hora:"14:12", lida:false },

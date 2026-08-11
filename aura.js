@@ -64,7 +64,14 @@
        NÃO forçar position na aside: ela usa sticky (desktop) / fixed (drawer mobile)
        definidos no index.html — aqui só garantimos o empilhamento acima da AURA. */
     '#app,.wrap,#app>main,header,section,footer{position:relative;z-index:1}',
-    '#app>aside{z-index:45}'
+    '#app>aside{z-index:45}',
+    /* Fix do drawer mobile (§2 do padrão): sem isto o AURA injeta z-index:45 e o
+       drawer aberto pode empatar/cair atrás do backdrop (.nav-bg z44), ficando
+       inclicável. Reasserta position:fixed + z-index:500 (acima do backdrop 44,
+       abaixo de modal 50). VP CAR usa left:-262/0 (não transform), então só
+       position+z-index precisam de override. Prova: elementFromPoint(120,300) com
+       o drawer aberto em 375px cai DENTRO do aside, não no #navBg. */
+    '@media(max-width:880px){#app aside{position:fixed!important;z-index:500!important}}'
   ].join('');
   document.head.appendChild(css);
 

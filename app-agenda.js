@@ -37,7 +37,10 @@ function load(){
     if(localStorage.getItem(K_EV)===null){ EV=seedEV(); saveEV(); }
     else EV=rd(K_EV,[]);
   }
-  if(TK===null)TK=rd(K_TK,[]);
+  if(TK===null){
+    if(localStorage.getItem(K_TK)===null){ TK=seedTK(); saveTK(); }
+    else TK=rd(K_TK,[]);
+  }
   if(LOG===null)LOG=rd(K_LOG,[]);
 }
 /* SEMENTE da pauta (demo): só na primeira carga (sem nada salvo). As datas vêm
@@ -52,6 +55,22 @@ function seedEV(){
     var d=new Date(mon);d.setDate(mon.getDate()+(+s.dow||0));
     out.push({id:i+1,data:iso(d),hora:s.hora||"09:00",resp:"",status:s.status||"pendente",
       texto:s.texto||"",veiculoId:s.veiculoId||"",locatarioId:s.locatarioId||""});
+  });
+  return out;
+}
+/* SEMENTE do quadro de Tarefas (§16.5): só na 1ª carga. Vem de DADOS._agendaTarefasSeed
+   (status/titulo/resp). Os `stamps` de cronometragem são montados aqui conforme o status,
+   com durações plausíveis, para os cartões já nascerem com "aguardando/em execução/levou". */
+function seedTK(){
+  var seed=(W()&&W()._agendaTarefasSeed)||[];
+  if(!seed.length)return [];
+  var now=Date.now(), M=60000, out=[];
+  seed.forEach(function(s,i){
+    var st=s.status||"pendente", stamps;
+    if(st==="andamento") stamps=[{s:"pendente",ts:now-115*M},{s:"andamento",ts:now-70*M}];
+    else if(st==="concluida") stamps=[{s:"pendente",ts:now-135*M},{s:"andamento",ts:now-75*M},{s:"concluida",ts:now-20*M}];
+    else stamps=[{s:"pendente",ts:now-(+s.ageMin||90)*M}];
+    out.push({id:i+1,status:st,titulo:s.titulo||"",resp:s.resp||"",stamps:stamps});
   });
   return out;
 }
