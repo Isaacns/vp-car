@@ -184,6 +184,27 @@ main{padding:24px 30px 40px;max-width:1560px;width:100%;margin:0 auto}
 .panel h3{font-size:1.06rem;font-weight:600;margin-bottom:2px}
 .panel .ph{color:var(--mut);font-size:.76rem;margin-bottom:14px}
 .chart-wrap{position:relative;height:230px}
+/* §20 — micro-animações tasteful: entrada (fade + leve subida) com stagger nos KPIs e
+   painéis do dashboard. Só transform/opacity; tudo dentro de no-preference — reduced-motion
+   vê o estado final. Sem cor fixa (white-label safe). Ver PADRAO-MOVIMENTO-VIZIO.md §20. */
+@media(prefers-reduced-motion:no-preference){
+  @keyframes vzRiseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  #view .kpis>*{animation:vzRiseIn .42s ease-out both}
+  #view .kpis>*:nth-child(2){animation-delay:.05s}
+  #view .kpis>*:nth-child(3){animation-delay:.10s}
+  #view .kpis>*:nth-child(4){animation-delay:.15s}
+  #view .kpis>*:nth-child(5){animation-delay:.20s}
+  #view .kpis>*:nth-child(6){animation-delay:.25s}
+  #view .kpis>*:nth-child(7){animation-delay:.30s}
+  #view .kpis>*:nth-child(8){animation-delay:.35s}
+  #view .grid2>.panel{animation:vzRiseIn .5s ease-out both}
+  #view .grid2>.panel:nth-child(2){animation-delay:.08s}
+  /* listas/cards (tabelas) entram com o mesmo fade+subida, num contêiner só (sem animar linha a linha) */
+  #view .tbl-wrap{animation:vzRiseIn .45s ease-out both;animation-delay:.06s}
+  /* troca de rota/aba: fade gentil no conteúdo inteiro (re-disparado por .vzin no render) */
+  @keyframes vzViewIn{from{opacity:.4}to{opacity:1}}
+  #view.vzin{animation:vzViewIn .3s ease-out}
+}
 
 /* Tabelas — sem sticky (corrige recortes) */
 .tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
@@ -495,6 +516,8 @@ function render(id){CURRENT=id;const m=MODULES.find(x=>x.id===id)||MODULES[0];
   const v=document.getElementById("view");v.style.setProperty("--acc",m.acc);
   ({home:rHome,alertas:rAlertas,agenda:(window.rAgenda||rHome),frota:rFrota,locatarios:rLoc,cobranca:rCob,recorrencia:rRecorrencia,reservas:rReservas,multas:rMultas,manutencao:rManut,alavancagem:rAlav,
     financeiro:rFin,score:rScore,contratos:rContr,vistorias:rVist,documentos:rDocumentos,portal:rPortalPreview,usuarios:rUsuarios}[id]||rHome)(v);
+  vzCountUp(v);   /* §20: count-up nos KPIs desta view (reduced-motion → estático) */
+  v.classList.remove("vzin"); void v.offsetWidth; v.classList.add("vzin"); /* §20: fade gentil de troca de aba */
   window.scrollTo({top:0,behavior:"smooth"});}
 
 /* ===================== UI helpers ===================== */
@@ -503,8 +526,37 @@ function mensalizar(l){if(l.plano==="Mensal")return l.valorAluguel;if(l.plano===
 function svTag(s){return`<span class="tag ${{"Disponível":"t-ok","Alugado":"t-info","Manutenção":"t-warn","Bloqueado":"t-blk"}[s]||'t-mut'}">${s}</span>`;}
 function spTag(s){return`<span class="tag ${{"Pago":"t-ok","Pendente":"t-warn","Atrasado":"t-bad"}[s]||'t-mut'}">${s}</span>`;}
 function emptyRow(n){return`<tr><td colspan="${n}" class="empty">Nenhum registro encontrado.</td></tr>`;}
+/* §20 — respeita prefers-reduced-motion (usado por count-up e pelas animações de gráfico). */
+function vzReduce(){return!!(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches);}
+/* §20 — count-up: números-chave dos KPIs contam até o valor (ease-out, ~700ms, pt-BR).
+   Preserva prefixo/sufixo (R$, %) e as casas decimais do texto renderizado.
+   reduced-motion → mantém o valor final estático (não conta). Só toca em .kpi .val. */
+function vzCountUp(scope){
+  if(vzReduce())return;
+  (scope||document).querySelectorAll(".kpi .val").forEach(function(el){
+    if(el.dataset.vzc==="1")return; el.dataset.vzc="1";
+    var raw=el.textContent, m=raw.match(/-?\d[\d.]*(?:,\d+)?/);
+    if(!m)return;
+    var numStr=m[0], pre=raw.slice(0,m.index), suf=raw.slice(m.index+numStr.length);
+    /* §20 guard: só conta número PURO (contagem, %, ou moeda R$). Rótulos que por acaso
+       contêm dígito — "D-3 · D0 · D+1", faixas "R$ 150–200" — ficam estáticos (pre/suf com
+       texto extra reprovam). Respeita a formatação BRL/inteiros já renderizada. */
+    if(!/^\s*R?\$?\s*$/.test(pre)||!/^\s*%?\s*$/.test(suf))return;
+    var dec=(numStr.split(",")[1]||"").length;
+    var target=parseFloat(numStr.replace(/\./g,"").replace(",","."));
+    if(!isFinite(target))return;
+    var start=performance.now(), dur=700, ease=function(t){return 1-Math.pow(1-t,3);};
+    var fmt=function(n){return n.toLocaleString("pt-BR",{minimumFractionDigits:dec,maximumFractionDigits:dec});};
+    function tick(now){var t=Math.min(1,(now-start)/dur);
+      el.textContent=pre+fmt(target*ease(t))+suf;
+      if(t<1)requestAnimationFrame(tick);else el.textContent=pre+fmt(target)+suf;}
+    requestAnimationFrame(tick);
+  });
+}
 function chartOpts(money){const mut=getComputedStyle(document.body).getPropertyValue("--mut"),grid=getComputedStyle(document.body).getPropertyValue("--line");
-  return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+  return{responsive:true,maintainAspectRatio:false,
+    animation:vzReduce()?false:{duration:700,easing:"easeOutQuart"},
+    plugins:{legend:{display:false}},
     scales:{x:{grid:{display:false},ticks:{color:mut,font:{size:11}}},y:{grid:{color:grid},ticks:{color:mut,font:{size:11},callback:v=>money?("R$ "+(v/1000)+"k"):v}}}};}
 function matchQ(mod,txt){const q=(document.getElementById("q_"+mod)?.value||"").toLowerCase();return!q||txt.toLowerCase().includes(q);}
 function actBtns(mod,id){return`<td class="acoes"><div class="row-actions">
@@ -548,7 +600,7 @@ function rHome(v){const a=agg();
   </div>${alertas()}`;
   const mut=getComputedStyle(document.body).getPropertyValue("--mut");
   charts.r=new Chart(chR,{type:"line",data:{labels:WORK.receitaMensal.map(r=>r.mes),datasets:[{data:WORK.receitaMensal.map(r=>r.valor),borderColor:"#C7A96B",backgroundColor:"rgba(199,169,107,.13)",fill:true,tension:.4,pointRadius:3,pointBackgroundColor:"#DcC08a",borderWidth:2}]},options:chartOpts(true)});
-  charts.f=new Chart(chF,{type:"doughnut",data:{labels:["Alugado","Disponível","Manutenção","Bloqueado"],datasets:[{data:[a.alugados,a.disp,a.manut,a.bloq],backgroundColor:["#7d9bd1","#4FB985","#D9A94C","#C98A3E"],borderWidth:0}]},options:{plugins:{legend:{position:"bottom",labels:{color:mut,padding:14,font:{size:11}}}},cutout:"64%",responsive:true,maintainAspectRatio:false}});}
+  charts.f=new Chart(chF,{type:"doughnut",data:{labels:["Alugado","Disponível","Manutenção","Bloqueado"],datasets:[{data:[a.alugados,a.disp,a.manut,a.bloq],backgroundColor:["#7d9bd1","#4FB985","#D9A94C","#C98A3E"],borderWidth:0}]},options:{animation:vzReduce()?false:{animateRotate:true,animateScale:true,duration:700,easing:"easeOutQuart"},plugins:{legend:{position:"bottom",labels:{color:mut,padding:14,font:{size:11}}}},cutout:"64%",responsive:true,maintainAspectRatio:false}});}
 function alertas(){const venc=WORK.veiculos.map(v=>({v,d:daysTo(v.ipvaVenc)})).filter(x=>x.d!==null&&x.d<=30).sort((a,b)=>a.d-b.d);
   const atr=WORK.cobrancas.filter(c=>c.statusPag==="Atrasado"),pend=WORK.cobrancas.filter(c=>c.statusPag==="Pendente"&&daysTo(c.vencimento)<=3);
   const mult=(WORK.multas||[]).filter(m=>m.status==="Pendente");let rows="";
@@ -950,7 +1002,7 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
    VERSÃO DO APP — bumpar a CADA deploy. É por este número que o push compara.
    Vale para a base (VP CAR) e para toda instância gerada a partir dela.
    ============================================================================ */
-window.APP_VERSION = '1.4.2';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
+window.APP_VERSION = '1.4.3';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
 
 /* ============================================================================
    PUSH DE ATUALIZAÇÃO — padrão VIZIO §14 (_PADROES-VIZIO-INPERSON.md)
