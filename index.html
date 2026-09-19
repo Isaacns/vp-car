@@ -24,6 +24,7 @@
      Nada de CDN aqui: no local vem da pasta, no GitHub Pages vem da raiz do domínio. -->
 <link rel="stylesheet" href="vendor/inter.css"/>
 <script src="vendor/chart.umd.min.js"></script>
+<script src="app-charts-vivo.js?v=1"></script><!-- §20 Gráficos vivos: onda líquida nas barras + crescer nativo (depois do Chart.js, antes dos new Chart) -->
 <script>window.VZ_ACCENT="#C7A96B";</script>
 <style>
 :root{
@@ -238,6 +239,27 @@ tbody tr:hover td.acoes{background:var(--card-2)}
 .modal input,.modal select,.modal textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--txt);font-family:inherit;font-size:.9rem}
 .modal input:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:var(--gold)}
 .modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:22px}
+/* §19 — ícone de Novidades no cabeçalho (topo direito) + badge de versão nova */
+.iconbtn{position:relative;width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);backdrop-filter:blur(6px);color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.02rem;line-height:1;transition:transform .12s,border-color .2s}
+.iconbtn:hover{transform:scale(1.04);border-color:var(--gold)}
+[data-theme="light"] .iconbtn{border-color:rgba(20,20,25,.12)}
+.iconbtn .dot{position:absolute;top:6px;right:7px;width:9px;height:9px;border-radius:50%;background:var(--bad);border:2px solid var(--card)}
+/* §19 — modal de Novidades (reusa .modal-bg como overlay) */
+.nov{width:100%;max-width:560px;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg,var(--card),var(--graphite));border:1px solid var(--line-2);border-radius:18px;box-shadow:var(--shadow);padding:22px 24px}
+.nov h3{font-size:1.24rem;font-weight:600;margin-bottom:2px}
+.nov .nsub{color:var(--mut);font-size:.82rem;margin-bottom:14px}
+.nov .rel{border-top:1px solid var(--line);padding:13px 0}
+.nov .rel:first-of-type{border-top:none;padding-top:2px}
+.nov .rh{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:7px}
+.nov .rv{font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums;font-size:.9rem}
+.nov .rt{font-weight:600;font-size:.98rem}
+.nov .rd{margin-left:auto;color:var(--mut-2);font-size:.72rem;font-variant-numeric:tabular-nums}
+.nov .new-tag{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-btn);background:linear-gradient(135deg,var(--gold-2),var(--gold-d));padding:2px 7px;border-radius:999px}
+.nov ul{list-style:none;margin:0;padding:0}
+.nov li{position:relative;padding:5px 0 5px 20px;font-size:.86rem;color:var(--sec);line-height:1.45}
+.nov li::before{content:"";position:absolute;left:2px;top:10px;width:8px;height:5px;border-left:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:rotate(-45deg)}
+.nov-actions{display:flex;justify-content:flex-end;margin-top:18px}
+@media(prefers-reduced-motion:no-preference){.nov{animation:vzRiseIn .3s ease-out both}}
 .photo-pick{display:flex;align-items:center;gap:14px}
 .photo-prev{width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--raise);border:1px solid var(--line-2)}
 
@@ -356,6 +378,7 @@ main{min-width:0}
         <div><h2 id="viewTitle">Visão Geral</h2><div class="subt" id="viewSub">Painel consolidado da frota</div></div>
       </div>
       <div class="tb-actions">
+        <button class="iconbtn" id="novBtn" onclick="openNovidades()" aria-label="Novidades" title="Novidades do sistema">✨<span class="dot hidden" id="novDot"></span></button>
         <div class="userchip" id="userchip" onclick="toggleUserDrop(event)">
           <div class="who"><div class="nm" id="ucName">—</div><div class="rl" id="ucRole">—</div></div>
           <div class="avatar" id="ucAvatar">VP</div>
@@ -458,7 +481,10 @@ function doUnlock(e){e.preventDefault();const p=document.getElementById("lockPas
   if(SESSION&&p===SESSION.pass){document.getElementById("lock").classList.add("hidden");document.getElementById("lockPass").value="";document.getElementById("app").classList.remove("hidden");}
   else document.getElementById("lockErr").textContent="Senha incorreta.";}
 function startApp(){["login","lock","portalLogin"].forEach(id=>document.getElementById(id).classList.add("hidden"));
-  document.getElementById("app").classList.remove("hidden");document.getElementById("app").classList.remove("portal-mode");refreshUserChip();buildNav();render("home");}
+  document.getElementById("app").classList.remove("hidden");document.getElementById("app").classList.remove("portal-mode");refreshUserChip();buildNav();render("home");
+  novAtualizaBadge();                                   /* §19: pontinho se há versão nova */
+  if(novTemNova())setTimeout(openNovidades,600);        /* §19: abre sozinha uma vez */
+}
 function refreshUserChip(){if(!SESSION)return;
   document.getElementById("ucName").textContent=SESSION.nome;document.getElementById("ucRole").textContent=SESSION.roleLabel;
   document.getElementById("udName").textContent=SESSION.nome;document.getElementById("udRole").textContent="@"+SESSION.user;
@@ -467,6 +493,59 @@ function refreshUserChip(){if(!SESSION)return;
   if(!SESSION.foto){document.getElementById("ucAvatar").style.background=SESSION.cor||"var(--gold)";document.getElementById("udAvatar").style.background=SESSION.cor||"var(--gold)";}}
 window.VP.refreshUserChip=refreshUserChip;
 function toggleUserDrop(e){e.stopPropagation();document.getElementById("udrop").classList.toggle("hidden");}
+
+/* ===================== §19 — Tela de Novidades ===================== */
+/* Histórico voltado ao usuário final (linguagem de locadora). Front-only:
+   o "visto" fica em localStorage; ordena por SEMVER real desc (nunca string). */
+const NOVIDADES=[
+  {v:"1.5.0",data:"2026-08-19",titulo:"Central de Novidades",itens:[
+    "Agora um ✨ aqui no topo mostra tudo o que muda no sistema da VP CAR, versão por versão.",
+    "Saiu novidade? Aparece um pontinho no ícone e esta tela abre sozinha uma vez, para você não perder nada."]},
+  {v:"1.4.3",data:"2026-08-18",titulo:"Sistema mais vivo",itens:[
+    "Os números dos seus painéis agora sobem contando até o valor.",
+    "Os gráficos se preenchem ao abrir, como um tanque enchendo.",
+    "As listas surgem suaves ao trocar de tela.",
+    "Prefere menos animação? O sistema respeita e mostra tudo estático."]},
+  {v:"1.4.0",data:"2026-07-26",titulo:"Agenda pronta e sistema mais rápido",itens:[
+    "A Agenda já abre com a semana da sua operação preenchida, pronta para usar.",
+    "O sistema carrega mais rápido e funciona até sem internet."]},
+  {v:"1.3.0",data:"2026-07-20",titulo:"Nova Agenda da operação",itens:[
+    "Pauta da semana (segunda a domingo), dividida em manhã, tarde e noite.",
+    "Arraste os cartões entre os dias e para o quadro de tarefas.",
+    "O quadro cronometra quanto tempo cada tarefa da frota levou."]},
+  {v:"1.2.0",data:"2026-07-20",titulo:"Aviso de atualização",itens:[
+    "Quando sai uma versão nova, a VP CAR avisa para você atualizar com um clique."]}
+];
+const NOV_KEY="vpcar_novidades_visto";
+function novEscTxt(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function novSemver(a){return String(a||"0").split(".").map(function(n){return parseInt(n,10)||0;});}
+function novCmp(a,b){var x=novSemver(a),y=novSemver(b);for(var i=0;i<3;i++){var d=(x[i]||0)-(y[i]||0);if(d!==0)return d;}return 0;}
+function novVisto(){try{return localStorage.getItem(NOV_KEY)||"0.0.0";}catch(e){return "0.0.0";}}
+function novTemNova(){return novCmp(window.APP_VERSION||"0.0.0",novVisto())>0;}
+function novAtualizaBadge(){var d=document.getElementById("novDot");if(d)d.classList.toggle("hidden",!novTemNova());}
+function novMarcarVisto(){try{localStorage.setItem(NOV_KEY,window.APP_VERSION||"0.0.0");}catch(e){}novAtualizaBadge();}
+function novData(iso){var p=String(iso||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:iso;}
+function openNovidades(){
+  if(document.getElementById("novBg"))return;
+  var visto=novVisto();
+  var lista=NOVIDADES.slice().sort(function(a,b){return novCmp(b.v,a.v);}); /* SEMVER desc, sem limit */
+  var rels=lista.map(function(r){
+    var nova=novCmp(r.v,visto)>0?'<span class="new-tag">novo</span>':'';
+    var itens=(r.itens||[]).map(function(i){return '<li>'+novEscTxt(i)+'</li>';}).join("");
+    return '<div class="rel"><div class="rh"><span class="rv">v'+novEscTxt(r.v)+'</span><span class="rt">'+novEscTxt(r.titulo)+'</span>'+nova+'<span class="rd">'+novData(r.data)+'</span></div><ul>'+itens+'</ul></div>';
+  }).join("");
+  var bg=document.createElement("div");bg.className="modal-bg";bg.id="novBg";
+  bg.innerHTML='<div class="nov" role="dialog" aria-modal="true" aria-label="Novidades do sistema" tabindex="-1" id="novCard">'
+    +'<h3>✨ Novidades</h3><div class="nsub">O que mudou no sistema — da versão mais recente para a mais antiga.</div>'
+    +rels+'<div class="nov-actions"><button class="b" onclick="closeNovidades()">Entendi</button></div></div>';
+  bg.addEventListener("mousedown",function(e){if(e.target===bg)closeNovidades();});
+  document.body.appendChild(bg);
+  document.addEventListener("keydown",novEsc);
+  var card=document.getElementById("novCard");if(card)card.focus();
+}
+function novEsc(e){if(e.key==="Escape")closeNovidades();}
+function closeNovidades(){var bg=document.getElementById("novBg");if(bg)bg.remove();document.removeEventListener("keydown",novEsc);novMarcarVisto();}
+window.openNovidades=openNovidades;window.closeNovidades=closeNovidades;
 document.addEventListener("click",()=>document.getElementById("udrop")?.classList.add("hidden"));
 /* Esc fecha modal/lightbox aberto (§6 acessibilidade) */
 document.addEventListener("keydown",function(e){
@@ -1002,7 +1081,7 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
    VERSÃO DO APP — bumpar a CADA deploy. É por este número que o push compara.
    Vale para a base (VP CAR) e para toda instância gerada a partir dela.
    ============================================================================ */
-window.APP_VERSION = '1.4.3';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
+window.APP_VERSION = '1.5.1';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
 
 /* ============================================================================
    PUSH DE ATUALIZAÇÃO — padrão VIZIO §14 (_PADROES-VIZIO-INPERSON.md)
