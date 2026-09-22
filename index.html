@@ -322,6 +322,68 @@ tbody tr:hover td.acoes{background:var(--card-2)}
 @media(max-width:359px){.kpis{grid-template-columns:1fr}}
 main{min-width:0}
 #view{max-width:100%}
+
+/* =========================================================================
+   MOBILE PREMIUM (≤560px) — tradução dos mockups aprovados (06_Mockups-Mobile).
+   Tudo escopado em #view (só o conteúdo do módulo; nunca mexe em modal/login/print)
+   e por media query — o DESKTOP fica intocado. Ritmo editorial: cards, filtros em
+   linha com rolagem, botões de ação uniformes, KPI-herói + acento de canto.
+   ========================================================================= */
+@media(max-width:560px){
+  /* ---- KPIs: acento de canto (some a barra lateral, "tell de IA") + herói ---- */
+  #view .kpis{gap:11px}
+  #view .kpi{padding:14px 14px;backdrop-filter:none;background:rgba(26,26,30,.72)}
+  #view .kpi::before{left:auto;top:-26px;right:-26px;bottom:auto;width:78px;height:78px;
+    border-radius:50%;background:radial-gradient(circle,var(--acc,var(--gold)),transparent 68%);opacity:.16}
+  #view .kpi:hover{transform:none;box-shadow:none}
+  #view .kpi .lab{font-size:.62rem;letter-spacing:.08em}
+  #view .kpi .val{font-size:1.3rem;letter-spacing:-.02em}   /* cabe BRL longo (R$ 17.135,40) sem cortar */
+  #view .kpi .sub{font-size:.66rem}
+  #view .kpis>.kpi:first-child{grid-column:1/-1;border-color:var(--line-2);
+    background:linear-gradient(155deg,color-mix(in srgb,var(--acc,var(--gold)) 16%,transparent),rgba(21,23,26,.9) 62%)}
+  #view .kpis>.kpi:first-child .val{font-size:2.05rem;letter-spacing:-.02em}
+
+  /* ---- Filtros/ações em linha única com rolagem horizontal (mockup Frota) ---- */
+  #view .tools{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:8px;
+    margin:0 -14px 14px;padding:2px 14px 6px;-webkit-overflow-scrolling:touch}
+  #view .tools::-webkit-scrollbar{height:0}
+  #view .tools>div{display:none}                 /* espaçador flex:1 */
+  #view .tools input{flex:0 0 auto;min-width:158px;width:auto}
+  #view .tools select{flex:0 0 auto;width:auto}
+  #view .tools .b,#view .tools .b-ghost{flex:0 0 auto}
+
+  /* ---- Tabela → cards (padrão mobile: cada linha vira um card) ---- */
+  #view .tbl-wrap{overflow:visible;border:none;background:transparent;border-radius:0}
+  #view .tbl-wrap table{display:block;width:100%;min-width:0;font-size:.9rem}
+  #view .tbl-wrap thead{display:none}
+  #view .tbl-wrap tbody{display:flex;flex-direction:column;gap:10px}
+  #view .tbl-wrap tr{display:block;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:13px 15px}
+  #view .tbl-wrap tbody tr:hover{background:var(--card)}
+  #view .tbl-wrap td{display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:8px 0;border-bottom:1px solid var(--line);white-space:normal;text-align:right;font-size:.86rem}
+  #view .tbl-wrap td:last-child{border-bottom:none;padding-bottom:0}
+  #view .tbl-wrap td::before{content:attr(data-label);flex:none;text-align:left;color:var(--mut);
+    font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+  #view .tbl-wrap td:empty{display:none}
+  /* 1ª célula = título do card (identificador principal, sem rótulo) */
+  #view .tbl-wrap td:first-child{display:block;text-align:left;font-size:1rem;font-weight:700;
+    padding-top:0;padding-bottom:11px;margin-bottom:3px}
+  #view .tbl-wrap td:first-child::before{display:none}
+  #view .tbl-wrap td:first-child>div{justify-content:flex-start}
+  /* célula de Ações → barra de botões uniformes (52px), rótulos sem quebra */
+  #view .tbl-wrap td.acoes{display:block;position:static;box-shadow:none;background:transparent;
+    text-align:left;padding:12px 0 0;border-bottom:none}
+  #view .tbl-wrap td.acoes::before{display:none}
+  #view .tbl-wrap td.acoes .row-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:stretch}
+  #view .tbl-wrap td.acoes .row-actions>*{flex:1 1 42%;min-height:52px;height:auto;
+    padding:0 12px;font-size:.86rem;border-radius:12px}
+
+  /* ---- Portal do locatário (leitura): herói full-width + CTA confortável ---- */
+  #view .portal-hero{flex-direction:column;align-items:stretch;padding:18px;border-radius:18px}
+  #view .portal-hero h3{font-size:1.32rem}
+  #view .portal-hero .b-wa{width:100%;height:48px}
+}
 </style>
 </head>
 <body data-theme="dark">
@@ -498,6 +560,10 @@ function toggleUserDrop(e){e.stopPropagation();document.getElementById("udrop").
 /* Histórico voltado ao usuário final (linguagem de locadora). Front-only:
    o "visto" fica em localStorage; ordena por SEMVER real desc (nunca string). */
 const NOVIDADES=[
+  {v:"1.5.2",data:"2026-09-22",titulo:"Feito para o seu celular",itens:[
+    "No celular, as listas viram cartões fáceis de ler — cada carro, cobrança ou multa em um só toque.",
+    "Filtros e botões numa faixa que desliza para o lado, sem quebrar linha nem apertar a tela.",
+    "Números em destaque, mais espaço e ritmo — a operação inteira cabe bem na palma da mão."]},
   {v:"1.5.0",data:"2026-08-19",titulo:"Central de Novidades",itens:[
     "Agora um ✨ aqui no topo mostra tudo o que muda no sistema da VP CAR, versão por versão.",
     "Saiu novidade? Aparece um pontinho no ícone e esta tela abre sozinha uma vez, para você não perder nada."]},
@@ -595,6 +661,7 @@ function render(id){CURRENT=id;const m=MODULES.find(x=>x.id===id)||MODULES[0];
   const v=document.getElementById("view");v.style.setProperty("--acc",m.acc);
   ({home:rHome,alertas:rAlertas,agenda:(window.rAgenda||rHome),frota:rFrota,locatarios:rLoc,cobranca:rCob,recorrencia:rRecorrencia,reservas:rReservas,multas:rMultas,manutencao:rManut,alavancagem:rAlav,
     financeiro:rFin,score:rScore,contratos:rContr,vistorias:rVist,documentos:rDocumentos,portal:rPortalPreview,usuarios:rUsuarios}[id]||rHome)(v);
+  vzStampCards(v);/* mobile: rotula as células p/ o CSS montar os cards (≤560px) */
   vzCountUp(v);   /* §20: count-up nos KPIs desta view (reduced-motion → estático) */
   v.classList.remove("vzin"); void v.offsetWidth; v.classList.add("vzin"); /* §20: fade gentil de troca de aba */
   window.scrollTo({top:0,behavior:"smooth"});}
@@ -650,6 +717,22 @@ function tableView(v,cfg){const{mod,titleAdd,cols,rowsHtml,filters,canAdd=true}=
     <button class="b-ghost" onclick="CRUD.report('${mod}')">🖨️ PDF</button></div>
     <div class="tbl-wrap"><table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}${canEdit?'<th class="acoes">Ações</th>':""}</tr></thead>
     <tbody id="tb_${mod}">${rowsHtml(canEdit)}</tbody></table></div>`);}
+/* MOBILE (mockups): carimba data-label em cada célula a partir do <th> da coluna,
+   para o CSS ≤560px transformar QUALQUER tabela .tbl-wrap em cards rotulados —
+   sem duplicar a lógica de render de cada módulo. No desktop o atributo é inerte. */
+function vzStampCards(scope){try{
+  (scope||document).querySelectorAll(".tbl-wrap table").forEach(function(t){
+    var head=t.querySelector("thead tr");if(!head)return;
+    var labs=[].map.call(head.children,function(th){return (th.textContent||"").trim();});
+    t.querySelectorAll("tbody tr").forEach(function(tr){
+      if(tr.children.length===1&&tr.children[0].hasAttribute("colspan"))return; /* linha vazia */
+      [].forEach.call(tr.children,function(td,i){
+        if(td.classList.contains("acoes"))return;
+        if(labs[i])td.setAttribute("data-label",labs[i]);
+      });
+    });
+  });
+}catch(e){}}
 
 /* ===================== HOME ===================== */
 function agg(){const V=WORK.veiculos,C=WORK.cobrancas,L=WORK.locatarios,M=WORK.multas||[];
@@ -1081,7 +1164,7 @@ function setLogos(){["loginLogo","sideLogo"].forEach(id=>{const e=document.getEl
    VERSÃO DO APP — bumpar a CADA deploy. É por este número que o push compara.
    Vale para a base (VP CAR) e para toda instância gerada a partir dela.
    ============================================================================ */
-window.APP_VERSION = '1.5.1';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
+window.APP_VERSION = '1.5.2';   /* §14.2: NUNCA const/var — escopo compartilhado entre scripts clássicos */
 
 /* ============================================================================
    PUSH DE ATUALIZAÇÃO — padrão VIZIO §14 (_PADROES-VIZIO-INPERSON.md)
